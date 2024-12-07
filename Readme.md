@@ -21,11 +21,15 @@ Tools:
 
 
 ## How to setup enivronment and docker
-* 1
+* Step 1: Activate the environment
 ```bash
     dmml\Scripts\activate
 ```
-* 2 
+* Step 2: Create the docker container
 ```bash
 docker-compose up --build
+```
+* Step 3: Access the website
+```
+http://127.0.0.1:5000/
 ```
