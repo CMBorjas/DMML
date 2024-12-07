@@ -3,6 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>Dungeon Master Assistant</title>
+    <style>
+        .npc-card {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .chat-history {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-top: 10px;
+            height: 150px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+        .chat-input {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>Welcome to the Dungeon Master Assistant</h1>
@@ -23,15 +41,26 @@
             npcList.innerHTML = '';
             npcs.forEach(npc => {
                 const npcDiv = document.createElement('div');
+                npcDiv.className = 'npc-card';
                 npcDiv.innerHTML = `
                     <h3>${npc.name} (${npc.role})</h3>
                     <p><strong>Alignment:</strong> ${npc.alignment}</p>
                     <p><strong>Stats:</strong> ${JSON.stringify(npc.stats)}</p>
                     <p><strong>Description:</strong> ${npc.description}</p>
                     <button onclick="deleteNpc(${npc.id})">Delete</button>
-                    <hr>
+                    <div class="chat-section">
+                        <h4>Chat with ${npc.name}</h4>
+                        <div id="chatHistory-${npc.id}" class="chat-history"></div>
+                        <div class="chat-input">
+                            <input type="text" id="chatInput-${npc.id}" placeholder="Enter your message..." />
+                            <button onclick="chatWithNpc(${npc.id})">Send</button>
+                        </div>
+                    </div>
                 `;
                 npcList.appendChild(npcDiv);
+
+                // Load existing chat history
+                updateChatHistory(npc.id);
             });
         }
 
@@ -58,6 +87,45 @@
                 fetchNpcs();
             } else {
                 alert('Failed to delete NPC');
+            }
+        }
+
+        async function chatWithNpc(npcId) {
+            const inputField = document.getElementById(`chatInput-${npcId}`);
+            const playerMessage = inputField.value.trim();
+            if (!playerMessage) {
+                alert('Please enter a message.');
+                return;
+            }
+
+            const response = await fetch(`/npc/${npcId}/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ input: playerMessage })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                updateChatHistory(npcId, data.chat_history);
+                inputField.value = ''; // Clear the input field
+            } else {
+                alert('Failed to send message.');
+            }
+        }
+
+        function updateChatHistory(npcId, chatHistory = null) {
+            const chatHistoryDiv = document.getElementById(`chatHistory-${npcId}`);
+            if (chatHistory === null) {
+                // Fetch the latest chat history
+                fetch(`/npc/${npcId}`)
+                    .then(response => response.json())
+                    .then(npc => {
+                        chatHistoryDiv.textContent = npc.chat_history || 'No conversation yet.';
+                    });
+            } else {
+                chatHistoryDiv.textContent = chatHistory;
             }
         }
 

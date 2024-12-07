@@ -33,3 +33,40 @@ docker-compose up --build
 ```
 http://127.0.0.1:5000/
 ```
+
+## Folder Structure:
+```
+/DMML
+│
+├── /app                  # Main application directory
+│   ├── __init__.py       # Initialize the Flask app
+│   ├── routes.py         # API and Flask route definitions
+│   ├── templates/        # HTML templates for Flask
+│   │   └── index.html    # The main web page
+│   ├── static/           # Static assets (CSS, JS, images, etc.)
+│   │   └── style.css     # Styling for your app
+│   └── models/           # Models for database and AI generation
+│       ├── profile.py    # Player profile model
+│       ├── campaign.py   # Campaign log model
+│       └── ai.py         # LangChain setup and AI-powered functions
+├── /dmml                 # Environment
+│
+├── /instance             # Store your campaign database
+│   └── data.db           # SQLite or other format for storing logs 
+│
+├── /migrations
+|   ├── / _pychache
+|   ├── /Versions
+│   ├── alembic.ini
+|   ├── /env.py
+|   ├── README             # Single-database configuration for Flask. 
+|   └── script.py.mako
+|
+├── Dockerfile        # Docker configuration for Flask app
+├── docker-compose.yml# Docker Compose file for multi-container setup
+├──.env               # Environment variables
+├──.gitignore         # Git ignore file
+├── requirements.txt  # Python dependencies
+└── run.py            # Entry point to run the app (Flask development server)
+
+```

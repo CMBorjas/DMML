@@ -15,6 +15,9 @@ def get_campaign_data():
     # Query all campaign logs from the database
     campaign_logs = CampaignLog.query.all()
     
+    # Log the retrieved campaign logs
+    print(f"Fetched campaign logs: {campaign_logs}")
+    
     # Concatenate relevant fields from all logs for LangChain processing
     campaign_data = []
     for log in campaign_logs:
@@ -22,4 +25,6 @@ def get_campaign_data():
         campaign_data.append(f"Encounters: {log.encounters}")
         campaign_data.append(f"NPC Details: {log.npc_details}")
     
+    print(f"Campaign data for LangChain: {campaign_data}")
     return campaign_data
+

@@ -5,11 +5,12 @@ class NPC(db.Model):
     name = db.Column(db.String(100), nullable=False)
     role = db.Column(db.String(50), nullable=False)
     alignment = db.Column(db.String(50))
-    stats = db.Column(db.JSON)  # Store stats like STR, DEX, etc., as JSON
-    abilities = db.Column(db.Text)  # Store special abilities
-    spells = db.Column(db.Text)  # Store spell details
-    racial_features = db.Column(db.Text)  # Store racial features
-    description = db.Column(db.Text)  # Additional description or notes
+    stats = db.Column(db.JSON)
+    abilities = db.Column(db.Text)
+    spells = db.Column(db.Text)
+    racial_features = db.Column(db.Text)
+    description = db.Column(db.Text)
+    chat_history = db.Column(db.Text, default="")  # Field to store chat history
 
     def to_dict(self):
         return {
@@ -22,4 +23,5 @@ class NPC(db.Model):
             "spells": self.spells,
             "racial_features": self.racial_features,
             "description": self.description,
+            "chat_history": self.chat_history,  # Include chat history in the dict
         }

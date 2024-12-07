@@ -20,16 +20,25 @@ llm = OpenAI(openai_api_key=openai_api_key)
 # Initialize the vector store and embeddings
 embeddings = OpenAIEmbeddings()
 
-# Function to set up the retrieval chain for LangChain
+# Function to set up the retrieval chain for LangChain------------------------
 def setup_retrieval_chain():
-    # Get campaign data (narrative, encounters, NPCs)
-    campaign_data = get_campaign_data()  
+    embeddings = OpenAIEmbeddings()
+    campaign_data = get_campaign_data()
+    if not campaign_data:
+        raise ValueError("No campaign data found! Please add some logs.")
+    
     vectorstore = FAISS.from_texts(campaign_data, embeddings)
-    retrieval_chain = RetrievalQA.from_chain_and_vectorstore(llm, vectorstore)
+    retrieval_chain = RetrievalQA.from_chain_type(
+        llm=llm,
+        retriever=vectorstore.as_retriever()
+    )
     return retrieval_chain
+
 
 # Function to get AI-powered narrative suggestions based on campaign history
 def generate_suggestion(query):
     retrieval_chain = setup_retrieval_chain()
-    response = retrieval_chain.run(query)
+    response = retrieval_chain.invoke({"query": query})
+    print("Query input:", {"query": query})
+    print("Response:", response)
     return response

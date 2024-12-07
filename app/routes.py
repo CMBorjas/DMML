@@ -3,6 +3,7 @@ from app.models.ai import generate_suggestion
 from app.models.npc import NPC
 from app import db
 import random
+from app.models.campaign import CampaignLog
 
 # Create a blueprint
 main_bp = Blueprint('main', __name__)
@@ -68,9 +69,19 @@ def delete_npc(npc_id):
 def chat_with_npc(npc_id):
     npc = NPC.query.get_or_404(npc_id)
     player_input = request.json.get('input', '')
+    if not player_input:
+        return jsonify({"error": "Input is required"}), 400
+
+    # Retrieve and update chat history
     context = f"NPC: {npc.name}, Role: {npc.role}, Abilities: {npc.abilities}, Spells: {npc.spells}, Racial Features: {npc.racial_features}"
     response = generate_suggestion(f"{context}. Player says: {player_input}")
-    return jsonify({"npc_response": response})
+
+    # Append chat to history
+    new_message = f"Player: {player_input}\nNPC: {response}\n"
+    npc.chat_history = (npc.chat_history or "") + new_message
+    db.session.commit()
+
+    return jsonify({"npc_response": response, "chat_history": npc.chat_history})
 
 # Helper function to generate a random NPC
 def generate_random_npc():
@@ -103,3 +114,45 @@ def generate_npc():
 def get_all_npcs():
     npcs = NPC.query.all()
     return jsonify([npc.to_dict() for npc in npcs])
+
+@main_bp.route('/debug/campaign_logs', methods=['GET'])
+def debug_campaign_logs():
+    campaign_logs = CampaignLog.query.all()
+    return jsonify([
+        {
+            "id": log.id,
+            "narrative": log.narrative,
+            "encounters": log.encounters,
+            "npc_details": log.npc_details,
+        }
+        for log in campaign_logs
+    ])
+
+@main_bp.route('/debug/seed_campaign_logs', methods=['POST'], endpoint='seed_campaign_logs_debug')
+def seed_campaign_logs():
+    # Example campaign logs
+    logs = [
+        {
+            "narrative": "The party entered the haunted forest seeking the lost artifact.",
+            "encounters": "They were ambushed by a pack of wolves and a band of goblins.",
+            "npc_details": "They met a mysterious ranger named Kaelen who offered to guide them."
+        },
+        {
+            "narrative": "The party reached the ancient ruins and found the artifact.",
+            "encounters": "They had to solve a magical puzzle to unlock the door.",
+            "npc_details": "An old historian NPC named Elenna shared knowledge about the artifact."
+        }
+    ]
+
+    for log in logs:
+        campaign_log = CampaignLog(
+            narrative=log["narrative"],
+            encounters=log["encounters"],
+            npc_details=log["npc_details"]
+        )
+        db.session.add(campaign_log)
+    
+    db.session.commit()
+    return jsonify({"message": "Campaign logs seeded successfully."}), 201
+
+
