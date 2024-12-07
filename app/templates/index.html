@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dungeon Master Assistant</title>
+</head>
+<body>
+    <h1>Welcome to the Dungeon Master Assistant</h1>
+
+    <h2>Generate NPCs</h2>
+    <button id="generateNpcButton">Generate NPC</button>
+
+    <h2>Saved NPCs</h2>
+    <div id="npcList">
+        <!-- NPCs will be rendered here -->
+    </div>
+
+    <script>
+        async function fetchNpcs() {
+            const response = await fetch('/npc');
+            const npcs = await response.json();
+            const npcList = document.getElementById('npcList');
+            npcList.innerHTML = '';
+            npcs.forEach(npc => {
+                const npcDiv = document.createElement('div');
+                npcDiv.innerHTML = `
+                    <h3>${npc.name} (${npc.role})</h3>
+                    <p><strong>Alignment:</strong> ${npc.alignment}</p>
+                    <p><strong>Stats:</strong> ${JSON.stringify(npc.stats)}</p>
+                    <p><strong>Description:</strong> ${npc.description}</p>
+                    <button onclick="deleteNpc(${npc.id})">Delete</button>
+                    <hr>
+                `;
+                npcList.appendChild(npcDiv);
+            });
+        }
+
+        async function generateNpc() {
+            const response = await fetch('/npc/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.ok) {
+                fetchNpcs();
+            }
+        }
+
+        async function deleteNpc(npcId) {
+            const response = await fetch(`/npc/${npcId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.ok) {
+                fetchNpcs();
+            } else {
+                alert('Failed to delete NPC');
+            }
+        }
+
+        document.getElementById('generateNpcButton').addEventListener('click', generateNpc);
+
+        // Fetch and render NPCs on page load
+        fetchNpcs();
+    </script>
+</body>
+</html>
