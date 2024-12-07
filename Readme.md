@@ -70,3 +70,46 @@ http://127.0.0.1:5000/
 └── run.py            # Entry point to run the app (Flask development server)
 
 ```
+## Steps to meet proposal
+
+1. Front End Enhancements:
+
+    Add functionality to import custom maps and allow token placement.
+
+2. Player Profiles:
+
+    Develop a database model for Player Profiles, including stats, inventory, and actions.
+
+3. Dynamic Quest and Loot Generation:
+
+    Extend LangChain's functionality to generate quests and loot, tailored to the current game context.
+
+4. Example Use Case:
+
+    Implement features like generating a quest or request from an NPC (e.g., Jenny the Witch).
+
+## Future goals
+1. Refine AI Responses:
+
+    Modify the prompt template sent to LangChain to include clear instructions for generating creative and relevant responses.
+    For example, you could structure it like this:
+
+    NPC Context: {npc_context}
+    Chat History: {chat_history}
+    Player says: {player_input}
+    NPC should reply in-character with relevant information or actions.
+
+2. UI Updates:
+
+    Allow players to review the full chat history in a scrollable or expandable section.
+    Add options to reset or clear an NPC's chat history.
+
+3. Handle Missing or Ambiguous Player Input:
+
+    Provide feedback if the player's input isn't clear or relevant.
+    You could add hints or examples of valid questions in the UI.
+
+4. Persistence and Campaign Integration:
+
+    Save all interactions to the campaign log for later reference.
+    Use these logs to inform NPCs' future behavior or interactions in the campaign.

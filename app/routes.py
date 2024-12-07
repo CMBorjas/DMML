@@ -65,25 +65,39 @@ def delete_npc(npc_id):
     db.session.commit()
     return jsonify({"message": "NPC deleted"}), 204
 
+# Add a new route to chat with an NPC -------------------------------------------------------------
 @main_bp.route('/npc/<int:npc_id>/chat', methods=['POST'])
 def chat_with_npc(npc_id):
     npc = NPC.query.get_or_404(npc_id)
-    player_input = request.json.get('input', '')
+    player_input = request.json.get('input', '').strip()
     if not player_input:
         return jsonify({"error": "Input is required"}), 400
 
-    # Retrieve and update chat history
-    context = f"NPC: {npc.name}, Role: {npc.role}, Abilities: {npc.abilities}, Spells: {npc.spells}, Racial Features: {npc.racial_features}"
-    response = generate_suggestion(f"{context}. Player says: {player_input}")
+    # Build the in-character context for the NPC
+    context = (
+        f"You are {npc.name}, a {npc.role} with {npc.alignment} alignment. "
+        f"You have the following abilities: {npc.abilities}, spells: {npc.spells}, "
+        f"and racial features: {npc.racial_features}. Speak as this character, "
+        f"and stay in character for all your responses.\n\n"
+        f"Previous interactions:\n{npc.chat_history or 'No prior interactions.'}\n\n"
+        f"Player: {player_input}\n{npc.name}:"
+    )
 
-    # Append chat to history
-    new_message = f"Player: {player_input}\nNPC: {response}\n"
+    # Generate response using the AI
+    response = generate_suggestion(context).strip()
+
+    # Ensure the response is natural and immersive
+    if not response or response.startswith("{"):
+        response = f"{npc.name}: Hello adventurer. How may I assist you?"
+
+    # Append the new interaction to the chat history with line breaks
+    new_message = f"Player: {player_input}\n{npc.name}: {response}\n\n"
     npc.chat_history = (npc.chat_history or "") + new_message
     db.session.commit()
 
     return jsonify({"npc_response": response, "chat_history": npc.chat_history})
 
-# Helper function to generate a random NPC
+# Helper function to generate a random NPC --------------------------------------------------------
 def generate_random_npc():
     return NPC(
         name=random.choice(["Dora Toreral", "Flarin Dusk", "Eryn Leafwalker"]),

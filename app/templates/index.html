@@ -3,24 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Dungeon Master Assistant</title>
-    <style>
-        .npc-card {
-            border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-        .chat-history {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-top: 10px;
-            height: 150px;
-            overflow-y: auto;
-            background-color: #f9f9f9;
-        }
-        .chat-input {
-            margin-top: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="static/style.css">
 </head>
 <body>
     <h1>Welcome to the Dungeon Master Assistant</h1>
@@ -47,20 +30,20 @@
                     <p><strong>Alignment:</strong> ${npc.alignment}</p>
                     <p><strong>Stats:</strong> ${JSON.stringify(npc.stats)}</p>
                     <p><strong>Description:</strong> ${npc.description}</p>
-                    <button onclick="deleteNpc(${npc.id})">Delete</button>
+                    <button onclick="deleteNpc(${npc.id})" class="delete-button">Delete</button>
                     <div class="chat-section">
                         <h4>Chat with ${npc.name}</h4>
                         <div id="chatHistory-${npc.id}" class="chat-history"></div>
                         <div class="chat-input">
                             <input type="text" id="chatInput-${npc.id}" placeholder="Enter your message..." />
-                            <button onclick="chatWithNpc(${npc.id})">Send</button>
+                            <button onclick="chatWithNpc(${npc.id})" class="send-button">Send</button>
                         </div>
                     </div>
                 `;
                 npcList.appendChild(npcDiv);
 
                 // Load existing chat history
-                updateChatHistory(npc.id);
+                updateChatHistory(npc.id, npc.chat_history);
             });
         }
 
@@ -115,18 +98,9 @@
             }
         }
 
-        function updateChatHistory(npcId, chatHistory = null) {
+        function updateChatHistory(npcId, chatHistory) {
             const chatHistoryDiv = document.getElementById(`chatHistory-${npcId}`);
-            if (chatHistory === null) {
-                // Fetch the latest chat history
-                fetch(`/npc/${npcId}`)
-                    .then(response => response.json())
-                    .then(npc => {
-                        chatHistoryDiv.textContent = npc.chat_history || 'No conversation yet.';
-                    });
-            } else {
-                chatHistoryDiv.textContent = chatHistory;
-            }
+            chatHistoryDiv.textContent = chatHistory; // Use `pre-wrap` style for formatting
         }
 
         document.getElementById('generateNpcButton').addEventListener('click', generateNpc);
