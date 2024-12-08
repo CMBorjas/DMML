@@ -2,10 +2,11 @@ from sqlalchemy import Column, Integer, String, Text
 from app import db
 
 class CampaignLog(db.Model):
-    id = Column(Integer, primary_key=True)
-    narrative = Column(Text)
-    encounters = Column(Text)
-    npc_details = Column(Text)
+    __tablename__ = "campaign_logs"  # Explicit table name
+    id = db.Column(db.Integer, primary_key=True)
+    narrative = db.Column(db.Text)
+    encounters = db.Column(db.Text)
+    npc_details = db.Column(db.Text)
 
     def __repr__(self):
         return f"<CampaignLog id={self.id} narrative={self.narrative[:30]}>"

@@ -51,3 +51,24 @@ def generate_suggestion(query):
     else:
         raise ValueError(f"Unexpected response format from LangChain: {result}")
 
+# Function to generate AI-powered quest suggestions based on NPC and location ---------------------
+def generate_quest(npc_name, location):
+    """
+    Generate a quest request from an NPC based on their name and location.
+    """
+    prompt = (
+        f"{npc_name}, a knowledgeable NPC located in {location}, "
+        "wants to assign a task to adventurers. Generate a detailed quest they might request."
+    )
+    return generate_suggestion(prompt)
+
+# Function to generate AI-powered loot suggestions based on quest name ----------------------------
+def generate_loot(quest_name):
+    """
+    Generate loot rewards for a completed quest based on the quest name.
+    """
+    prompt = (
+        f"Based on the completion of the quest '{quest_name}', "
+        "generate a suitable loot reward for adventurers."
+    )
+    return generate_suggestion(prompt)
