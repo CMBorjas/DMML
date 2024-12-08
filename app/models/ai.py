@@ -20,36 +20,53 @@ llm = OpenAI(openai_api_key=openai_api_key)
 # Initialize the vector store and embeddings
 embeddings = OpenAIEmbeddings()
 
-# Function to set up the retrieval chain for LangChain------------------------
+# Function to set up the retrieval chain for LangChain---------------------------------------------
 def setup_retrieval_chain():
     embeddings = OpenAIEmbeddings()
-    campaign_data = get_campaign_data()
+    campaign_data = get_campaign_data()  # Retrieve campaign logs
     if not campaign_data:
         raise ValueError("No campaign data found! Please add some logs.")
     
+    # Use embeddings to create a vector store with prioritization logic
     vectorstore = FAISS.from_texts(campaign_data, embeddings)
+    retriever = vectorstore.as_retriever()
+    
+    # Refine retriever with filters (if applicable) or sort by relevance
+    retriever.search_kwargs = {"k": 5}  # Retrieve the top 5 most relevant logs
+
     retrieval_chain = RetrievalQA.from_chain_type(
         llm=llm,
-        retriever=vectorstore.as_retriever()
+        retriever=retriever
     )
     return retrieval_chain
 
-
-# Function to get AI-powered narrative suggestions based on campaign history ---------------------
-def generate_suggestion(query):
+# Function to get AI-powered narrative suggestions based on campaign history ------------------------------------------
+def generate_suggestion(query, npc_name=None, recent_interactions=None):
     retrieval_chain = setup_retrieval_chain()
-    result = retrieval_chain.invoke({"query": query})  # Ensure we get the correct response format
 
-    # Log the raw result for debugging
+    # Build a richer prompt using the recent interactions and NPC context
+    if npc_name and recent_interactions:
+        context = (
+            f"You are {npc_name}, an NPC in a tabletop role-playing game. Stay in character and respond naturally.\n\n"
+            f"Recent interactions:\n{recent_interactions}\n\n"
+            f"Player Query: {query}\n"
+        )
+    else:
+        context = query  # Use the raw query if no additional context is available
+
+    # Invoke LangChain with the context
+    result = retrieval_chain.invoke({"query": context})
+
+    # Debug raw result
     print("Raw LangChain result:", result)
 
-    # Extract the 'result' key from the response dictionary
+    # Extract and return the result
     if isinstance(result, dict) and "result" in result:
         return result["result"]
     elif isinstance(result, str):
-        return result  # If it's already a string, return it
+        return result
     else:
-        raise ValueError(f"Unexpected response format from LangChain: {result}")
+        raise ValueError(f"Unexpected response format: {result}")
 
 # Function to generate AI-powered quest suggestions based on NPC and location ---------------------
 def generate_quest(npc_name, location):

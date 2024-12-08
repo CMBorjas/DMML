@@ -70,23 +70,6 @@ http://127.0.0.1:5000/
 └── run.py            # Entry point to run the app (Flask development server)
 
 ```
-## Steps to meet proposal
-
-1. Front End Enhancements:
-
-    Add functionality to import custom maps and allow token placement.
-
-2. Player Profiles:
-
-    Develop a database model for Player Profiles, including stats, inventory, and actions.
-
-3. Dynamic Quest and Loot Generation:
-
-    Extend LangChain's functionality to generate quests and loot, tailored to the current game context.
-
-4. Example Use Case:
-
-    Implement features like generating a quest or request from an NPC (e.g., Jenny the Witch).
 
 ## Future goals
 1. Refine AI Responses:

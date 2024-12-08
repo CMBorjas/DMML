@@ -80,29 +80,22 @@ def chat_with_npc(npc_id):
     if not player_input:
         return jsonify({"error": "Input is required"}), 400
 
-    # Build the in-character context for the NPC, including chat history and quests
-    context = (
-        f"You are {npc.name}, a {npc.role} with {npc.alignment} alignment. "
-        f"You have the following abilities: {npc.abilities}, spells: {npc.spells}, "
-        f"and racial features: {npc.racial_features}. Speak as this character, "
-        f"and stay in character for all your responses.\n\n"
-        f"Previous interactions:\n{npc.chat_history or 'No prior interactions.'}\n\n"
-        f"Player: {player_input}\n{npc.name}:"
-    )
+    # Retrieve recent interactions (e.g., last 5 chat logs)
+    recent_interactions = npc.chat_history.split("\n")[-5:]  # Get the last 5 interactions
 
-    # Generate response using the AI
-    response = generate_suggestion(context).strip()
+    # Build the query with multi-turn context
+    context_query = f"NPC Name: {npc.name}\nRecent Interactions:\n{recent_interactions}\n\nPlayer Query: {player_input}\nResponse:"
 
-    # Ensure the response is natural and immersive
-    if not response or response.startswith("{"):
-        response = f"{npc.name}: Hello adventurer. How may I assist you?"
+    # Generate the response using RAG
+    response = generate_suggestion(context_query).strip()
 
-    # Append the new interaction to the chat history with line breaks
+    # Update chat history
     new_message = f"Player: {player_input}\n{npc.name}: {response}\n\n"
     npc.chat_history = (npc.chat_history or "") + new_message
     db.session.commit()
 
     return jsonify({"npc_response": response, "chat_history": npc.chat_history})
+
 
 # Helper function to generate a random NPC --------------------------------------------------------
 def generate_random_npc():
