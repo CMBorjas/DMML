@@ -62,6 +62,9 @@ http://127.0.0.1:5000/
 |   ├── README             # Single-database configuration for Flask. 
 |   └── script.py.mako
 |
+├── /refrences
+|   └── DnD_5E_CharacterSheet.pdf # PDF for chracters, able to be filled out by user
+|
 ├── Dockerfile        # Docker configuration for Flask app
 ├── docker-compose.yml# Docker Compose file for multi-container setup
 ├──.env               # Environment variables
