@@ -1,17 +1,37 @@
 services:
+  # ── Flask Application ────────────────────────────────────────────────────
   flask-app:
     build: .
     ports:
       - "5000:5000"
     volumes:
       - .:/app
+    environment:
+      # AI provider: "openai" (default) or "ollama"
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3}
+      # Point at the Postgres container when running with Docker Compose
+      DATABASE_URL: postgresql://user:password@db/campaign_db
+      SECRET_KEY: ${SECRET_KEY:-change-me}
+      FLASK_DEBUG: ${FLASK_DEBUG:-0}
     depends_on:
       - db
-  db: 
-    image: postgres:13
+
+  # ── PostgreSQL (used by Docker deployment) ───────────────────────────────
+  # For local laptop development, omit this service and let the app fall back
+  # to SQLite by leaving DATABASE_URL unset in your .env file.
+  db:
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: campaign_db
     ports:
       - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

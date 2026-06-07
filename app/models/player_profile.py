@@ -1,20 +1,31 @@
-from sqlalchemy import column, Integer, String, Text, ForeignKey
+"""
+PlayerProfile model
+-------------------
+Stores a D&D 5e player character sheet.
+
+Fields map 1-to-1 with the SRD 5e character sheet structure so the
+data can later be used to auto-fill a PDF form (e.g. the WotC sheet).
+
+Stats & proficiencies are stored as plain integers / text columns
+rather than JSON to make them directly queryable and sortable.
+"""
+
 from app import db
+
 
 class PlayerProfile(db.Model):
     __tablename__ = "player_profiles"
 
-    # Basic Details
+    # ── Identity ──────────────────────────────────────────────────────────
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     species = db.Column(db.String(50), nullable=False)
     subspecies = db.Column(db.String(50), nullable=True)
-    character_class = db.Column(db.String(50), nullable=False)  # Corrected name
-    player_class = db.Column(db.String(50), nullable=False)
+    character_class = db.Column(db.String(50), nullable=False)
     background = db.Column(db.String(100), nullable=True)
     alignment = db.Column(db.String(50), nullable=True)
 
-    # Ability Scores
+    # ── Ability Scores ────────────────────────────────────────────────────
     strength = db.Column(db.Integer, nullable=False, default=10)
     dexterity = db.Column(db.Integer, nullable=False, default=10)
     constitution = db.Column(db.Integer, nullable=False, default=10)
@@ -22,36 +33,39 @@ class PlayerProfile(db.Model):
     wisdom = db.Column(db.Integer, nullable=False, default=10)
     charisma = db.Column(db.Integer, nullable=False, default=10)
 
-    # Stats & Proficiencies
+    # ── Proficiencies ─────────────────────────────────────────────────────
     skills = db.Column(db.Text, nullable=True)
     tool_proficiencies = db.Column(db.Text, nullable=True)
     languages = db.Column(db.Text, nullable=True)
+    saving_throws = db.Column(db.Text, nullable=True)
+
+    # ── Combat Stats ──────────────────────────────────────────────────────
     hit_points = db.Column(db.Integer, nullable=False, default=10)
     armor_class = db.Column(db.Integer, nullable=False, default=10)
     speed = db.Column(db.Integer, nullable=False, default=30)
     initiative = db.Column(db.Integer, nullable=False, default=0)
-    saving_throws = db.Column(db.Text, nullable=True)
 
-    # Inventory & Equipment
+    # ── Inventory & Equipment ─────────────────────────────────────────────
     equipment = db.Column(db.Text, nullable=True)
     weapons = db.Column(db.Text, nullable=True)
     spells = db.Column(db.Text, nullable=True)
 
-    # Narrative/Backstory
+    # ── Narrative ─────────────────────────────────────────────────────────
     description = db.Column(db.Text, nullable=True)
     backstory = db.Column(db.Text, nullable=True)
 
-    # Relationship to CampaignLog
-    campaign_id = db.Column(db.Integer, db.ForeignKey("campaign_logs.id"), nullable=True)
+    # ── Campaign Relationship ─────────────────────────────────────────────
+    campaign_id = db.Column(
+        db.Integer, db.ForeignKey("campaign_logs.id"), nullable=True
+    )
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {
             "id": self.id,
             "name": self.name,
             "species": self.species,
             "subspecies": self.subspecies,
             "character_class": self.character_class,
-            "player_class": self.player_class,
             "background": self.background,
             "alignment": self.alignment,
             "strength": self.strength,

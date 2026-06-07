@@ -1,4 +1,33 @@
-# .gitignore
+# Environment
 .env
 
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+env/
+venv/
+dmml/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# References / Assets
 /References/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

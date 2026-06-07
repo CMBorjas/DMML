@@ -2,17 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dungeon Master Assistant</title>
-    <link rel="stylesheet" href="static/style.css">
+    <!-- Fixed: use url_for so Flask correctly resolves the static path -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <h1>Welcome to the Dungeon Master Assistant</h1>
 
-    <!-- Button to show the character sheet form -->
+    <!-- ── Character Creation ──────────────────────────────────────────── -->
     <h2>Create Character</h2>
     <button id="createCharacterButton">Create Character</button>
 
-    <!-- Character sheet form (hidden initially) -->
     <div id="characterFormContainer" style="display: none;">
         <h3>Character Sheet</h3>
         <form id="characterForm">
@@ -49,7 +50,8 @@
             </select><br><br>
 
             <label for="characterStats">Stats (STR, DEX, CON, INT, WIS, CHA):</label>
-            <input type="text" id="characterStats" name="stats" placeholder="e.g., 15, 14, 13, 12, 10, 8" required><br><br>
+            <input type="text" id="characterStats" name="stats"
+                   placeholder="e.g., 15, 14, 13, 12, 10, 8" required><br><br>
 
             <label for="characterBackground">Background:</label>
             <input type="text" id="characterBackground" name="background" required><br><br>
@@ -71,202 +73,202 @@
         </form>
     </div>
 
-    <!-- Generate NPCs and show saved NPCs -->
+    <!-- ── NPC Management ─────────────────────────────────────────────── -->
     <h2>Generate NPCs</h2>
     <button id="generateNpcButton">Generate NPC</button>
 
-    <!-- List of saved NPCs -->
     <h2>Saved NPCs</h2>
     <div id="npcList">
-        <!-- NPCs will be rendered here -->
+        <!-- NPC cards rendered by JS -->
     </div>
 
     <script>
-        // Show the character form
+        // ── Character Form ───────────────────────────────────────────────
         document.getElementById('createCharacterButton').addEventListener('click', () => {
-            const formContainer = document.getElementById('characterFormContainer');
-            formContainer.style.display = formContainer.style.display === 'none' ? 'block' : 'none';
+            const container = document.getElementById('characterFormContainer');
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
         });
 
-        // Fetch NPCs and render them on the page
+        document.getElementById('saveCharacterButton').addEventListener('click', submitCharacterForm);
+
+        async function submitCharacterForm() {
+            const form = document.getElementById('characterForm');
+            const rawStats = form.characterStats.value.split(',').map(s => parseInt(s.trim(), 10));
+            const stats = {
+                STR: rawStats[0] || 10,
+                DEX: rawStats[1] || 10,
+                CON: rawStats[2] || 10,
+                INT: rawStats[3] || 10,
+                WIS: rawStats[4] || 10,
+                CHA: rawStats[5] || 10,
+            };
+
+            const payload = {
+                name:            form.characterName.value.trim(),
+                species:         form.characterSpecies.value,
+                character_class: form.characterClass.value,
+                alignment:       form.characterAlignment.value,
+                background:      form.characterBackground.value.trim(),
+                stats,
+            };
+
+            // Updated endpoint: /player_profiles
+            const res = await fetch('/player_profiles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            if (res.ok) {
+                alert('Character saved successfully!');
+                form.reset();
+                document.getElementById('characterFormContainer').style.display = 'none';
+            } else {
+                const err = await res.json();
+                alert(`Failed to save character: ${err.error || 'Unknown error'}`);
+            }
+        }
+
+        // ── NPC List ─────────────────────────────────────────────────────
+        document.getElementById('generateNpcButton').addEventListener('click', generateNpc);
+
         async function fetchNpcs() {
             try {
-                const response = await fetch('/npc');
-                if (response.ok) {
-                    const npcs = await response.json();
-                    const npcList = document.getElementById('npcList');
-                    npcList.innerHTML = '';
-                    npcs.forEach(npc => {
-                        const npcDiv = document.createElement('div');
-                        npcDiv.className = 'npc-card';
-                        npcDiv.innerHTML = `
-                            <h3>${npc.name} (${npc.role})</h3>
-                            <p><strong>Alignment:</strong> ${npc.alignment}</p>
-                            <p><strong>Stats:</strong> ${JSON.stringify(npc.stats)}</p>
-                            <p><strong>Description:</strong> ${npc.description}</p>
-                            <button onclick="generateQuest(${npc.id}, '${npc.name}')">Generate Quest</button>
-                            <button onclick="generateLoot(${npc.id}, '${npc.name}')">Generate Loot</button>
-                            <button onclick="deleteNpc(${npc.id})" class="delete-button">Delete</button>
-                            <div class="chat-section">
-                                <h4>Chat with ${npc.name}</h4>
-                                <div id="chatHistory-${npc.id}" class="chat-history"></div>
-                                <div class="chat-input">
-                                    <input type="text" id="chatInput-${npc.id}" placeholder="Enter your message..." />
-                                    <button onclick="chatWithNpc(${npc.id})" class="send-button">Send</button>
-                                </div>
+                const res = await fetch('/npc');
+                if (!res.ok) { console.error('Failed to fetch NPCs'); return; }
+
+                const npcs = await res.json();
+                const list = document.getElementById('npcList');
+                list.innerHTML = '';
+
+                npcs.forEach(npc => {
+                    const card = document.createElement('div');
+                    card.className = 'npc-card';
+                    card.innerHTML = `
+                        <h3>${npc.name} (${npc.role})</h3>
+                        <p><strong>Alignment:</strong> ${npc.alignment}</p>
+                        <p><strong>Abilities:</strong> ${npc.abilities}</p>
+                        <p><strong>Spells:</strong> ${npc.spells}</p>
+                        <p><strong>Racial Features:</strong> ${npc.racial_features}</p>
+                        <p><strong>Description:</strong> ${npc.description}</p>
+                        <p><strong>Stats:</strong> ${JSON.stringify(npc.stats)}</p>
+
+                        <button onclick="generateQuest(${npc.id}, '${npc.name}')">Generate Quest</button>
+                        <button onclick="generateLoot(${npc.id})">Generate Loot</button>
+                        <button onclick="deleteNpc(${npc.id})" class="delete-button">Delete</button>
+
+                        <div class="chat-section">
+                            <h4>Chat with ${npc.name}</h4>
+                            <div id="chatHistory-${npc.id}" class="chat-history"></div>
+                            <div class="chat-input">
+                                <input type="text" id="chatInput-${npc.id}"
+                                       placeholder="Enter your message..." />
+                                <button onclick="chatWithNpc(${npc.id}, '${npc.name}')"
+                                        class="send-button">Send</button>
                             </div>
-                        `;
-                        npcList.appendChild(npcDiv);
-                        updateChatHistory(npc.id, npc.chat_history);
-                    });
-                } else {
-                    console.error('Failed to fetch NPCs');
-                }
-            } catch (error) {
-                console.error('Error fetching NPCs:', error);
+                        </div>
+                    `;
+                    list.appendChild(card);
+                    loadChatHistory(npc.id);
+                });
+            } catch (e) {
+                console.error('Error fetching NPCs:', e);
             }
         }
 
         async function generateNpc() {
-            try {
-                const response = await fetch('/npc/generate', { method: 'POST' });
-                if (response.ok) {
-                    fetchNpcs();
-                } else {
-                    alert('Failed to generate NPC.');
-                }
-            } catch (error) {
-                console.error('Error generating NPC:', error);
-            }
+            const res = await fetch('/npc/generate', { method: 'POST' });
+            if (res.ok) { fetchNpcs(); }
+            else { alert('Failed to generate NPC.'); }
         }
 
         async function deleteNpc(npcId) {
-            const response = await fetch(`/npc/${npcId}`, { method: 'DELETE' });
-            if (response.ok) fetchNpcs();
+            if (!confirm('Delete this NPC?')) return;
+            const res = await fetch(`/npc/${npcId}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) { fetchNpcs(); }
         }
 
-        async function chatWithNpc(npcId) {
-            const inputField = document.getElementById(`chatInput-${npcId}`);
-            const playerMessage = inputField.value.trim();
-            if (!playerMessage) {
-                alert('Please enter a message.');
-                return;
-            }
+        // ── Chat ─────────────────────────────────────────────────────────
 
-            const response = await fetch(`/npc/${npcId}/chat`, {
+        async function loadChatHistory(npcId) {
+            const res = await fetch(`/npc/${npcId}/chat`);
+            if (!res.ok) return;
+            const messages = await res.json();
+            renderMessages(npcId, messages);
+        }
+
+        function renderMessages(npcId, messages) {
+            const box = document.getElementById(`chatHistory-${npcId}`);
+            box.innerHTML = messages.map(m => {
+                const label = m.sender === 'player' ? 'You' : m.npc_name || 'NPC';
+                return `<p><strong>${label}:</strong> ${m.content}</p>`;
+            }).join('');
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function chatWithNpc(npcId, npcName) {
+            const input = document.getElementById(`chatInput-${npcId}`);
+            const text = input.value.trim();
+            if (!text) { alert('Please enter a message.'); return; }
+
+            const res = await fetch(`/npc/${npcId}/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: playerMessage })
+                body: JSON.stringify({ input: text }),
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                updateChatHistory(npcId, data.chat_history);
-                inputField.value = '';
+            if (res.ok) {
+                const data = await res.json();
+                renderMessages(npcId, data.messages);
+                input.value = '';
             } else {
-                const error = await response.json();
-                alert(`Error: ${error.error || 'Failed to send message.'}`);
+                const err = await res.json();
+                alert(`Error: ${err.error || 'Failed to send message.'}`);
             }
         }
 
-        function updateChatHistory(npcId, chatHistory) {
-            const chatHistoryDiv = document.getElementById(`chatHistory-${npcId}`);
-            chatHistoryDiv.textContent = chatHistory;
-        }
+        // ── Quests & Loot ────────────────────────────────────────────────
 
         async function generateQuest(npcId, npcName) {
             const location = prompt(`Where is ${npcName} assigning the quest?`);
             if (!location) return;
 
-            const response = await fetch(`/npc/${npcId}/generate_quest`, {
+            const res = await fetch(`/npc/${npcId}/generate_quest`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ location }),
             });
 
-            if (response.ok) {
-                const data = await response.json();
-
-                // Update the chat dialogue with the new quest
-                const chatHistoryDiv = document.getElementById(`chatHistory-${npcId}`);
-                chatHistoryDiv.textContent = data.chat_history;
-
-                // Scroll to the bottom of the chat history
-                chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
+            if (res.ok) {
+                const data = await res.json();
+                const box = document.getElementById(`chatHistory-${npcId}`);
+                box.innerHTML += `<p><strong>${npcName}:</strong> ${data.quest}</p>`;
+                box.scrollTop = box.scrollHeight;
             } else {
-                alert('Failed to generate quest. Please try again.');
+                alert('Failed to generate quest.');
             }
         }
 
-        async function generateLoot(npcId, npcName) {
-            try {
-                const response = await fetch(`/npc/${npcId}/generate_loot`, { // Use npcId in the URL
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                });
+        async function generateLoot(npcId) {
+            const questName = prompt('Quest name (for thematic loot)?') || 'the recent quest';
 
-                if (response.ok) {
-                    const data = await response.json();
-
-                    // Add the generated loot to the chat history
-                    const chatHistoryDiv = document.getElementById(`chatHistory-${npcId}`);
-                    const newMessage = `${npcName}: I have prepared the following loot for you: ${data.loot}`;
-                    chatHistoryDiv.textContent += `\n${newMessage}`;
-
-                    // Scroll to the bottom of the chat history
-                    chatHistoryDiv.scrollTop = chatHistoryDiv.scrollHeight;
-                } else {
-                    alert('Failed to generate loot. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error generating loot:', error);
-                alert('An error occurred while generating loot.');
-            }
-        }
-
-
-        async function submitCharacterForm() {
-            const form = document.getElementById('characterForm');
-            const statsArray = form.characterStats.value.split(',').map(stat => parseInt(stat.trim(), 10));
-            const stats = {
-                STR: statsArray[0] || 0,
-                DEX: statsArray[1] || 0,
-                CON: statsArray[2] || 0,
-                INT: statsArray[3] || 0,
-                WIS: statsArray[4] || 0,
-                CHA: statsArray[5] || 0
-            };
-            
-            const data = {
-                name: form.characterName.value.trim(),
-                species: form.characterSpecies.value,
-                character_class: form.characterClass.value,
-                player_class: form.characterClass.value,
-                alignment: form.characterAlignment.value,
-                stats: stats,
-                background: form.characterBackground.value.trim()
-            };
-
-            const response = await fetch('/player_profile', {
+            const res = await fetch(`/npc/${npcId}/generate_loot`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: JSON.stringify({ quest_name: questName }),
             });
 
-            if (response.ok) {
-                alert('Character saved successfully!');
-                form.reset();
-                document.getElementById('characterFormContainer').style.display = 'none';
+            if (res.ok) {
+                const data = await res.json();
+                const box = document.getElementById(`chatHistory-${npcId}`);
+                box.innerHTML += `<p><strong>Loot:</strong> ${data.loot}</p>`;
+                box.scrollTop = box.scrollHeight;
             } else {
-                const errorResponse = await response.json();
-                alert(`Failed to save character. ${errorResponse.error || 'Please check the form and try again.'}`);
+                alert('Failed to generate loot.');
             }
         }
 
-        document.getElementById('saveCharacterButton').addEventListener('click', submitCharacterForm);
-        document.getElementById('generateNpcButton').addEventListener('click', generateNpc);
-
-        // Fetch NPCs on page load
+        // ── Init ─────────────────────────────────────────────────────────
         fetchNpcs();
     </script>
 </body>
