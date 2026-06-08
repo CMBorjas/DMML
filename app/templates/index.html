@@ -1,275 +1,457 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dungeon Master Assistant</title>
-    <!-- Fixed: use url_for so Flask correctly resolves the static path -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dungeon Master Assistant</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Welcome to the Dungeon Master Assistant</h1>
 
-    <!-- ── Character Creation ──────────────────────────────────────────── -->
-    <h2>Create Character</h2>
-    <button id="createCharacterButton">Create Character</button>
+<div class="page-wrapper">
 
-    <div id="characterFormContainer" style="display: none;">
-        <h3>Character Sheet</h3>
-        <form id="characterForm">
-            <label for="characterName">Name:</label>
-            <input type="text" id="characterName" name="name" required><br><br>
+  <!-- ── Header ─────────────────────────────────────────────────────── -->
+  <header class="page-header">
+    <h1>⚔ Dungeon Master Assistant</h1>
+  </header>
 
-            <label for="characterSpecies">Species:</label>
-            <select id="characterSpecies" name="species" required>
-                <option value="Dwarf">Dwarf</option>
-                <option value="Elf">Elf</option>
-                <option value="Halfling">Halfling</option>
-                <option value="Human">Human</option>
-                <option value="Dragonborn">Dragonborn</option>
-                <option value="Gnome">Gnome</option>
-                <option value="Half-Elf">Half-Elf</option>
-                <option value="Half-Orc">Half-Orc</option>
-                <option value="Tiefling">Tiefling</option>
-            </select><br><br>
+  <!-- ── Create Character ───────────────────────────────────────────── -->
+  <h2>Create Character</h2>
+  <button class="btn-primary" id="createCharacterButton">+ New Character</button>
 
-            <label for="characterClass">Class:</label>
-            <select id="characterClass" name="character_class" required>
-                <option value="Barbarian">Barbarian</option>
-                <option value="Bard">Bard</option>
-                <option value="Cleric">Cleric</option>
-                <option value="Druid">Druid</option>
-                <option value="Fighter">Fighter</option>
-                <option value="Monk">Monk</option>
-                <option value="Paladin">Paladin</option>
-                <option value="Ranger">Ranger</option>
-                <option value="Rogue">Rogue</option>
-                <option value="Sorcerer">Sorcerer</option>
-                <option value="Warlock">Warlock</option>
-                <option value="Wizard">Wizard</option>
-            </select><br><br>
+  <div id="characterFormContainer" class="form-container" style="display:none; margin-top:12px;">
+    <h3 style="font-family:'Cinzel',serif; color:var(--text-heading); margin-bottom:16px;">Character Sheet</h3>
+    <form id="characterForm">
+      <div class="form-row">
+        <label for="characterName">Name</label>
+        <input type="text" id="characterName" name="name" required placeholder="Character name">
+      </div>
+      <div class="form-row">
+        <label for="characterSpecies">Species</label>
+        <select id="characterSpecies" name="species" required>
+          <option value="Dwarf">Dwarf</option><option value="Elf">Elf</option>
+          <option value="Halfling">Halfling</option><option value="Human">Human</option>
+          <option value="Dragonborn">Dragonborn</option><option value="Gnome">Gnome</option>
+          <option value="Half-Elf">Half-Elf</option><option value="Half-Orc">Half-Orc</option>
+          <option value="Tiefling">Tiefling</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="characterClass">Class</label>
+        <select id="characterClass" name="character_class" required>
+          <option value="Barbarian">Barbarian</option><option value="Bard">Bard</option>
+          <option value="Cleric">Cleric</option><option value="Druid">Druid</option>
+          <option value="Fighter">Fighter</option><option value="Monk">Monk</option>
+          <option value="Paladin">Paladin</option><option value="Ranger">Ranger</option>
+          <option value="Rogue">Rogue</option><option value="Sorcerer">Sorcerer</option>
+          <option value="Warlock">Warlock</option><option value="Wizard">Wizard</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label for="characterStats">Stats (STR, DEX, CON, INT, WIS, CHA)</label>
+        <input type="text" id="characterStats" name="stats" placeholder="e.g. 15, 14, 13, 12, 10, 8" required>
+      </div>
+      <div class="form-row">
+        <label for="characterBackground">Background</label>
+        <input type="text" id="characterBackground" name="background" required placeholder="e.g. Soldier">
+      </div>
+      <div class="form-row">
+        <label for="characterAlignment">Alignment</label>
+        <select id="characterAlignment" name="alignment" required>
+          <option value="Lawful Good">Lawful Good</option><option value="Neutral Good">Neutral Good</option>
+          <option value="Chaotic Good">Chaotic Good</option><option value="Lawful Neutral">Lawful Neutral</option>
+          <option value="True Neutral">True Neutral</option><option value="Chaotic Neutral">Chaotic Neutral</option>
+          <option value="Lawful Evil">Lawful Evil</option><option value="Neutral Evil">Neutral Evil</option>
+          <option value="Chaotic Evil">Chaotic Evil</option>
+        </select>
+      </div>
+      <div style="margin-top:16px; display:flex; gap:8px;">
+        <button type="button" class="btn-primary" id="saveCharacterButton">Save Character</button>
+        <button type="button" class="btn-action" id="cancelCharacterButton">Cancel</button>
+      </div>
+    </form>
+  </div>
 
-            <label for="characterStats">Stats (STR, DEX, CON, INT, WIS, CHA):</label>
-            <input type="text" id="characterStats" name="stats"
-                   placeholder="e.g., 15, 14, 13, 12, 10, 8" required><br><br>
+  <!-- ── Generate NPCs ──────────────────────────────────────────────── -->
+  <h2>Generate NPCs</h2>
+  <button class="btn-primary" id="generateNpcButton">⚄ Generate Random NPC</button>
 
-            <label for="characterBackground">Background:</label>
-            <input type="text" id="characterBackground" name="background" required><br><br>
+  <!-- ── Saved NPCs (collapsible tree) ──────────────────────────────── -->
+  <h2>Saved NPCs</h2>
+  <div id="npcList">
+    <p style="color:var(--text-muted); font-size:0.85rem;">Loading NPCs…</p>
+  </div>
 
-            <label for="characterAlignment">Alignment:</label>
-            <select id="characterAlignment" name="alignment" required>
-                <option value="Lawful Good">Lawful Good</option>
-                <option value="Neutral Good">Neutral Good</option>
-                <option value="Chaotic Good">Chaotic Good</option>
-                <option value="Lawful Neutral">Lawful Neutral</option>
-                <option value="True Neutral">True Neutral</option>
-                <option value="Chaotic Neutral">Chaotic Neutral</option>
-                <option value="Lawful Evil">Lawful Evil</option>
-                <option value="Neutral Evil">Neutral Evil</option>
-                <option value="Chaotic Evil">Chaotic Evil</option>
-            </select><br><br>
+</div><!-- /.page-wrapper -->
 
-            <button type="button" id="saveCharacterButton">Save Character</button>
-        </form>
+<!-- ============================================================
+     DICE ROLLER WIDGET (fixed, always visible)
+     State persists in localStorage.
+     ============================================================ -->
+<div id="diceWidget">
+  <button id="diceToggleBtn" aria-label="Open Dice Roller" title="Dice Roller">
+    <span>⚄</span>
+    <span id="diceBadge" class="hidden">0</span>
+  </button>
+
+  <div id="dicePanel" class="hidden">
+
+    <div class="dp-header">
+      <h3>⚄ Dice Roller</h3>
+      <button id="dpClose" aria-label="Close">×</button>
     </div>
 
-    <!-- ── NPC Management ─────────────────────────────────────────────── -->
-    <h2>Generate NPCs</h2>
-    <button id="generateNpcButton">Generate NPC</button>
-
-    <h2>Saved NPCs</h2>
-    <div id="npcList">
-        <!-- NPC cards rendered by JS -->
+    <!-- Current selection chips -->
+    <div class="dp-selection" id="dpSelection">
+      <span class="dp-selection-empty">No dice selected — click a die below</span>
     </div>
 
-    <script>
-        // ── Character Form ───────────────────────────────────────────────
-        document.getElementById('createCharacterButton').addEventListener('click', () => {
-            const container = document.getElementById('characterFormContainer');
-            container.style.display = container.style.display === 'none' ? 'block' : 'none';
-        });
+    <!-- Standard dice picker -->
+    <div class="dp-label">Standard Dice — click to add · right-click to remove</div>
+    <div class="dp-grid" id="dpGrid">
+      <!-- Rendered by JS -->
+    </div>
 
-        document.getElementById('saveCharacterButton').addEventListener('click', submitCharacterForm);
+    <!-- Controls -->
+    <div class="dp-controls">
+      <button id="dpRoll">Roll</button>
+      <button id="dpReset">Reset</button>
+      <button id="dpClear">Clear Log</button>
+    </div>
 
-        async function submitCharacterForm() {
-            const form = document.getElementById('characterForm');
-            const rawStats = form.characterStats.value.split(',').map(s => parseInt(s.trim(), 10));
-            const stats = {
-                STR: rawStats[0] || 10,
-                DEX: rawStats[1] || 10,
-                CON: rawStats[2] || 10,
-                INT: rawStats[3] || 10,
-                WIS: rawStats[4] || 10,
-                CHA: rawStats[5] || 10,
-            };
+    <!-- Roll results log -->
+    <div class="dp-results" id="dpResults">
+      <p style="color:var(--text-muted); font-size:0.78rem;">Roll results will appear here.</p>
+    </div>
 
-            const payload = {
-                name:            form.characterName.value.trim(),
-                species:         form.characterSpecies.value,
-                character_class: form.characterClass.value,
-                alignment:       form.characterAlignment.value,
-                background:      form.characterBackground.value.trim(),
-                stats,
-            };
+  </div>
+</div>
 
-            // Updated endpoint: /player_profiles
-            const res = await fetch('/player_profiles', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
+<script>
+// ============================================================
+// NPC TREE
+// ============================================================
 
-            if (res.ok) {
-                alert('Character saved successfully!');
-                form.reset();
-                document.getElementById('characterFormContainer').style.display = 'none';
-            } else {
-                const err = await res.json();
-                alert(`Failed to save character: ${err.error || 'Unknown error'}`);
-            }
-        }
+document.getElementById('createCharacterButton').addEventListener('click', () => {
+  const c = document.getElementById('characterFormContainer');
+  c.style.display = c.style.display === 'none' ? 'block' : 'none';
+});
+document.getElementById('cancelCharacterButton').addEventListener('click', () => {
+  document.getElementById('characterFormContainer').style.display = 'none';
+});
+document.getElementById('saveCharacterButton').addEventListener('click', submitCharacterForm);
+document.getElementById('generateNpcButton').addEventListener('click', generateNpc);
 
-        // ── NPC List ─────────────────────────────────────────────────────
-        document.getElementById('generateNpcButton').addEventListener('click', generateNpc);
+async function fetchNpcs() {
+  try {
+    const res = await fetch('/npc');
+    if (!res.ok) return;
+    const npcs = await res.json();
+    const list = document.getElementById('npcList');
+    list.innerHTML = '';
+    if (!npcs.length) {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">No NPCs yet — generate one above.</p>';
+      return;
+    }
+    npcs.forEach(npc => {
+      const stats = npc.stats || {};
+      const statPills = Object.entries(stats).map(([k,v]) =>
+        `<span class="stat-pill">${k}: ${v}</span>`).join('');
 
-        async function fetchNpcs() {
-            try {
-                const res = await fetch('/npc');
-                if (!res.ok) { console.error('Failed to fetch NPCs'); return; }
+      const details = document.createElement('details');
+      details.className = 'npc-card';
+      details.id = `npc-${npc.id}`;
+      details.innerHTML = `
+        <summary class="npc-summary">
+          <span class="npc-chevron">▶</span>
+          <span class="npc-summary-name">${npc.name}</span>
+          <span class="npc-badge badge-role">${npc.role}</span>
+          <span class="npc-badge badge-align">${npc.alignment || '—'}</span>
+        </summary>
+        <div class="npc-body">
+          <div class="npc-info">
+            <p><strong>Abilities</strong><br>${npc.abilities || '—'}</p>
+            <p style="margin-top:8px;"><strong>Spells</strong><br>${npc.spells || 'None'}</p>
+            <p style="margin-top:8px;"><strong>Racial Features</strong><br>${npc.racial_features || '—'}</p>
+            <p style="margin-top:8px;"><strong>Description</strong><br>${npc.description || '—'}</p>
+          </div>
+          <div class="npc-info">
+            <p><strong>Ability Scores</strong></p>
+            <div class="stat-pills">${statPills || '<span style="color:var(--text-muted)">—</span>'}</div>
+          </div>
+          <div class="npc-actions">
+            <button class="btn-action" onclick="generateQuest(${npc.id},'${escStr(npc.name)}')">⚔ Quest</button>
+            <button class="btn-action" onclick="generateLoot(${npc.id})">💰 Loot</button>
+            <button class="btn-danger" onclick="deleteNpc(${npc.id})">🗑 Delete</button>
+          </div>
+          <div class="chat-section">
+            <h4>Chat with ${npc.name}</h4>
+            <div class="chat-history" id="chatHistory-${npc.id}"></div>
+            <div class="chat-input">
+              <input type="text" id="chatInput-${npc.id}" placeholder="Say something…">
+              <button class="btn-action" onclick="chatWithNpc(${npc.id},'${escStr(npc.name)}')">Send</button>
+            </div>
+          </div>
+        </div>
+      `;
+      list.appendChild(details);
+      loadChatHistory(npc.id);
+    });
+  } catch(e) { console.error('fetchNpcs:', e); }
+}
 
-                const npcs = await res.json();
-                const list = document.getElementById('npcList');
-                list.innerHTML = '';
+function escStr(s) { return (s||'').replace(/'/g,"\\'"); }
 
-                npcs.forEach(npc => {
-                    const card = document.createElement('div');
-                    card.className = 'npc-card';
-                    card.innerHTML = `
-                        <h3>${npc.name} (${npc.role})</h3>
-                        <p><strong>Alignment:</strong> ${npc.alignment}</p>
-                        <p><strong>Abilities:</strong> ${npc.abilities}</p>
-                        <p><strong>Spells:</strong> ${npc.spells}</p>
-                        <p><strong>Racial Features:</strong> ${npc.racial_features}</p>
-                        <p><strong>Description:</strong> ${npc.description}</p>
-                        <p><strong>Stats:</strong> ${JSON.stringify(npc.stats)}</p>
+async function generateNpc() {
+  const btn = document.getElementById('generateNpcButton');
+  btn.disabled = true; btn.textContent = 'Generating…';
+  const res = await fetch('/npc/generate', { method:'POST' });
+  btn.disabled = false; btn.textContent = '⚄ Generate Random NPC';
+  if (res.ok) fetchNpcs(); else alert('Failed to generate NPC.');
+}
 
-                        <button onclick="generateQuest(${npc.id}, '${npc.name}')">Generate Quest</button>
-                        <button onclick="generateLoot(${npc.id})">Generate Loot</button>
-                        <button onclick="deleteNpc(${npc.id})" class="delete-button">Delete</button>
+async function deleteNpc(npcId) {
+  if (!confirm('Delete this NPC and all their chat history?')) return;
+  const res = await fetch(`/npc/${npcId}`, { method:'DELETE' });
+  if (res.ok || res.status === 204) fetchNpcs();
+}
 
-                        <div class="chat-section">
-                            <h4>Chat with ${npc.name}</h4>
-                            <div id="chatHistory-${npc.id}" class="chat-history"></div>
-                            <div class="chat-input">
-                                <input type="text" id="chatInput-${npc.id}"
-                                       placeholder="Enter your message..." />
-                                <button onclick="chatWithNpc(${npc.id}, '${npc.name}')"
-                                        class="send-button">Send</button>
-                            </div>
-                        </div>
-                    `;
-                    list.appendChild(card);
-                    loadChatHistory(npc.id);
-                });
-            } catch (e) {
-                console.error('Error fetching NPCs:', e);
-            }
-        }
+async function loadChatHistory(npcId) {
+  const res = await fetch(`/npc/${npcId}/chat`);
+  if (!res.ok) return;
+  renderMessages(npcId, await res.json());
+}
 
-        async function generateNpc() {
-            const res = await fetch('/npc/generate', { method: 'POST' });
-            if (res.ok) { fetchNpcs(); }
-            else { alert('Failed to generate NPC.'); }
-        }
+function renderMessages(npcId, messages) {
+  const box = document.getElementById(`chatHistory-${npcId}`);
+  if (!box) return;
+  box.innerHTML = messages.length
+    ? messages.map(m => `<p><strong>${m.sender === 'player' ? 'You' : 'NPC'}:</strong> ${m.content}</p>`).join('')
+    : '';
+  box.scrollTop = box.scrollHeight;
+}
 
-        async function deleteNpc(npcId) {
-            if (!confirm('Delete this NPC?')) return;
-            const res = await fetch(`/npc/${npcId}`, { method: 'DELETE' });
-            if (res.ok || res.status === 204) { fetchNpcs(); }
-        }
+async function chatWithNpc(npcId, npcName) {
+  const input = document.getElementById(`chatInput-${npcId}`);
+  const text = input.value.trim();
+  if (!text) { alert('Please enter a message.'); return; }
+  const res = await fetch(`/npc/${npcId}/chat`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ input: text })
+  });
+  if (res.ok) {
+    const data = await res.json();
+    renderMessages(npcId, data.messages);
+    input.value = '';
+  } else {
+    const err = await res.json();
+    alert(`Error: ${err.error || 'Failed to send.'}`);
+  }
+}
 
-        // ── Chat ─────────────────────────────────────────────────────────
+async function generateQuest(npcId, npcName) {
+  const location = prompt(`Where is ${npcName} assigning the quest?`);
+  if (!location) return;
+  const res = await fetch(`/npc/${npcId}/generate_quest`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ location })
+  });
+  if (res.ok) {
+    const data = await res.json();
+    const box = document.getElementById(`chatHistory-${npcId}`);
+    if (box) { box.innerHTML += `<p><strong>${npcName}:</strong> ${data.quest}</p>`; box.scrollTop = box.scrollHeight; }
+  } else alert('Failed to generate quest.');
+}
 
-        async function loadChatHistory(npcId) {
-            const res = await fetch(`/npc/${npcId}/chat`);
-            if (!res.ok) return;
-            const messages = await res.json();
-            renderMessages(npcId, messages);
-        }
+async function generateLoot(npcId) {
+  const questName = prompt('Quest name (for thematic loot)?') || 'the recent quest';
+  const res = await fetch(`/npc/${npcId}/generate_loot`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ quest_name: questName })
+  });
+  if (res.ok) {
+    const data = await res.json();
+    const box = document.getElementById(`chatHistory-${npcId}`);
+    if (box) { box.innerHTML += `<p><strong>Loot:</strong> ${data.loot}</p>`; box.scrollTop = box.scrollHeight; }
+  } else alert('Failed to generate loot.');
+}
 
-        function renderMessages(npcId, messages) {
-            const box = document.getElementById(`chatHistory-${npcId}`);
-            box.innerHTML = messages.map(m => {
-                const label = m.sender === 'player' ? 'You' : m.npc_name || 'NPC';
-                return `<p><strong>${label}:</strong> ${m.content}</p>`;
-            }).join('');
-            box.scrollTop = box.scrollHeight;
-        }
+async function submitCharacterForm() {
+  const form = document.getElementById('characterForm');
+  const rawStats = form.characterStats.value.split(',').map(s => parseInt(s.trim(), 10));
+  const stats = { STR: rawStats[0]||10, DEX: rawStats[1]||10, CON: rawStats[2]||10,
+                  INT: rawStats[3]||10, WIS: rawStats[4]||10, CHA: rawStats[5]||10 };
+  const payload = {
+    name: form.characterName.value.trim(),
+    species: form.characterSpecies.value,
+    character_class: form.characterClass.value,
+    alignment: form.characterAlignment.value,
+    background: form.characterBackground.value.trim(),
+    stats
+  };
+  const res = await fetch('/player_profiles', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if (res.ok) {
+    alert('Character saved!');
+    form.reset();
+    document.getElementById('characterFormContainer').style.display = 'none';
+  } else {
+    const err = await res.json();
+    alert(`Failed: ${err.error || 'Check the form and try again.'}`);
+  }
+}
 
-        async function chatWithNpc(npcId, npcName) {
-            const input = document.getElementById(`chatInput-${npcId}`);
-            const text = input.value.trim();
-            if (!text) { alert('Please enter a message.'); return; }
+// ============================================================
+// DICE ROLLER — state persists in localStorage
+// ============================================================
 
-            const res = await fetch(`/npc/${npcId}/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ input: text }),
-            });
+const DICE_TYPES = ['d4','d6','d8','d10','d12','d20','d100'];
+const STORAGE_KEY = 'dmml_dice_state';
 
-            if (res.ok) {
-                const data = await res.json();
-                renderMessages(npcId, data.messages);
-                input.value = '';
-            } else {
-                const err = await res.json();
-                alert(`Error: ${err.error || 'Failed to send message.'}`);
-            }
-        }
+function loadDiceState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveDiceState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+function totalDice(state) {
+  return DICE_TYPES.reduce((n, d) => n + (state[d] || 0), 0);
+}
 
-        // ── Quests & Loot ────────────────────────────────────────────────
+function buildDiceGrid() {
+  const grid = document.getElementById('dpGrid');
+  grid.innerHTML = '';
+  DICE_TYPES.forEach(die => {
+    const btn = document.createElement('button');
+    btn.className = 'die-btn';
+    btn.dataset.die = die;
+    btn.title = `Left-click: add ${die} · Right-click: remove ${die}`;
+    btn.innerHTML = `
+      <div class="die-shape-wrap">
+        <div class="die-shape ${die}">${die}</div>
+        <span class="die-count-badge hidden" id="badge-${die}">0</span>
+      </div>
+      <span class="die-label">${die}</span>
+    `;
+    btn.addEventListener('click', () => adjustDie(die, 1));
+    btn.addEventListener('contextmenu', (e) => { e.preventDefault(); adjustDie(die, -1); });
+    grid.appendChild(btn);
+  });
+}
 
-        async function generateQuest(npcId, npcName) {
-            const location = prompt(`Where is ${npcName} assigning the quest?`);
-            if (!location) return;
+function adjustDie(die, delta) {
+  const state = loadDiceState();
+  state[die] = Math.max(0, (state[die] || 0) + delta);
+  saveDiceState(state);
+  updateDiceUI(state);
+}
 
-            const res = await fetch(`/npc/${npcId}/generate_quest`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ location }),
-            });
+function updateDiceUI(state) {
+  // Badge on toggle button
+  const total = totalDice(state);
+  const badge = document.getElementById('diceBadge');
+  badge.textContent = total;
+  badge.classList.toggle('hidden', total === 0);
 
-            if (res.ok) {
-                const data = await res.json();
-                const box = document.getElementById(`chatHistory-${npcId}`);
-                box.innerHTML += `<p><strong>${npcName}:</strong> ${data.quest}</p>`;
-                box.scrollTop = box.scrollHeight;
-            } else {
-                alert('Failed to generate quest.');
-            }
-        }
+  // Per-die count badges on picker
+  DICE_TYPES.forEach(die => {
+    const b = document.getElementById(`badge-${die}`);
+    if (!b) return;
+    const n = state[die] || 0;
+    b.textContent = n;
+    b.classList.toggle('hidden', n === 0);
+  });
 
-        async function generateLoot(npcId) {
-            const questName = prompt('Quest name (for thematic loot)?') || 'the recent quest';
+  // Selection chips
+  const sel = document.getElementById('dpSelection');
+  sel.innerHTML = '';
+  const active = DICE_TYPES.filter(d => (state[d] || 0) > 0);
+  if (!active.length) {
+    sel.innerHTML = '<span class="dp-selection-empty">No dice selected — click a die below</span>';
+  } else {
+    active.forEach(die => {
+      const chip = document.createElement('span');
+      chip.className = 'dp-chip';
+      chip.innerHTML = `<span class="chip-n">${state[die]}</span><span>${die}</span>`;
+      sel.appendChild(chip);
+    });
+  }
+}
 
-            const res = await fetch(`/npc/${npcId}/generate_loot`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ quest_name: questName }),
-            });
+function rollDice() {
+  const state = loadDiceState();
+  const active = DICE_TYPES.filter(d => (state[d] || 0) > 0);
+  if (!active.length) { alert('Select some dice first!'); return; }
 
-            if (res.ok) {
-                const data = await res.json();
-                const box = document.getElementById(`chatHistory-${npcId}`);
-                box.innerHTML += `<p><strong>Loot:</strong> ${data.loot}</p>`;
-                box.scrollTop = box.scrollHeight;
-            } else {
-                alert('Failed to generate loot.');
-            }
-        }
+  let total = 0;
+  const groups = [];
 
-        // ── Init ─────────────────────────────────────────────────────────
-        fetchNpcs();
-    </script>
+  active.forEach(die => {
+    const sides = die === 'd100' ? 100 : parseInt(die.slice(1));
+    const count = state[die];
+    const rolls = [];
+    for (let i = 0; i < count; i++) {
+      const r = Math.floor(Math.random() * sides) + 1;
+      rolls.push(r);
+      total += r;
+    }
+    groups.push({ die, rolls });
+  });
+
+  renderRollResult(total, groups);
+}
+
+function renderRollResult(total, groups) {
+  const results = document.getElementById('dpResults');
+  const now = new Date();
+  const time = now.toLocaleTimeString();
+
+  const pips = groups.flatMap(({ die, rolls }) =>
+    rolls.map(r => `
+      <div class="roll-die-pip">
+        <div class="pip-shape pip-${die}">${r}</div>
+        <span class="pip-label">${die}</span>
+      </div>`)
+  ).join('');
+
+  const entry = document.createElement('div');
+  entry.className = 'roll-entry';
+  entry.innerHTML = `
+    <span class="roll-timestamp">[${time}]</span>
+    <span class="roll-total">Total: ${total}</span>
+    <div class="roll-dice-grid">${pips}</div>
+  `;
+
+  // Prepend so newest is on top
+  const placeholder = results.querySelector('p');
+  if (placeholder) placeholder.remove();
+  results.insertBefore(entry, results.firstChild);
+}
+
+// ── Wire up dice panel controls ────────────────────────────
+document.getElementById('diceToggleBtn').addEventListener('click', () => {
+  document.getElementById('dicePanel').classList.toggle('hidden');
+});
+document.getElementById('dpClose').addEventListener('click', () => {
+  document.getElementById('dicePanel').classList.add('hidden');
+});
+document.getElementById('dpRoll').addEventListener('click', rollDice);
+document.getElementById('dpReset').addEventListener('click', () => {
+  saveDiceState({});
+  updateDiceUI({});
+});
+document.getElementById('dpClear').addEventListener('click', () => {
+  document.getElementById('dpResults').innerHTML =
+    '<p style="color:var(--text-muted);font-size:0.78rem;">Roll results will appear here.</p>';
+});
+
+// ── Init ──────────────────────────────────────────────────
+buildDiceGrid();
+updateDiceUI(loadDiceState());
+fetchNpcs();
+</script>
 </body>
 </html>

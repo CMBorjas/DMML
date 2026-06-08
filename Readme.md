@@ -20,7 +20,41 @@ DMML leverages **LangChain RAG** (Retrieval-Augmented Generation) to help Dungeo
 
 ---
 
-## Setup
+## Quick Start — One Command
+
+```bash
+./start.sh                        # Ollama (offline, default)
+./start.sh --provider openai      # OpenAI (requires API key in .env)
+./start.sh --debug                # Enable debug mode + /debug/* routes
+./start.sh --port 8080            # Custom port
+```
+
+### Developer shortcut (Makefile)
+```bash
+make          # → start with Ollama
+make openai   # → start with OpenAI
+make debug    # → debug mode
+make clean    # → remove .venv and caches
+```
+
+> **The launcher automatically:** creates the `.venv`, installs dependencies,
+> copies `.env.example → .env` on first run, runs pending DB migrations,
+> and opens your browser.
+
+---
+
+## Desktop Shortcut
+
+Run **once** to install a desktop icon that double-click-launches the app.
+
+```bash
+./install_shortcut.sh
+# Creates: ~/Desktop/dmml.desktop  +  ~/.local/share/applications/dmml.desktop
+```
+
+---
+
+## Detailed Setup
 
 ### Option A — Local Development (SQLite + Ollama or OpenAI)
 
@@ -131,7 +165,6 @@ docker-compose up --build
 ├── app/                          # Flask application package
 │   ├── __init__.py               # App factory (create_app)
 │   ├── routes/                   # Route blueprints (one file per domain)
-│   │   ├── __init__.py
 │   │   ├── npc.py                # NPC CRUD + AI chat/quest/loot
 │   │   ├── player.py             # Player profile CRUD
 │   │   ├── campaign.py           # Campaign log read routes
@@ -150,15 +183,19 @@ docker-compose up --build
 │   ├── templates/
 │   │   └── index.html            # Main web interface
 │   └── static/
-│       └── style.css             # App styles
+│       ├── style.css             # App styles
+│       └── icon.png              # App icon (used by desktop shortcuts)
 │
 ├── migrations/                   # Flask-Migrate / Alembic migrations
-├── .env.example                  # Example environment variable file
+├── .env.example                  # Template — copy to .env and fill in values
 ├── .gitignore
 ├── Dockerfile
 ├── docker-compose.yml
+├── Makefile                      # Developer convenience: make / make openai / make debug
 ├── requirements.txt
-└── run.py                        # Entrypoint: calls create_app()
+├── run.py                        # Entrypoint: calls create_app()
+├── start.sh                      # ★ One-command launcher
+└── install_shortcut.sh           # Desktop shortcut installer (run once)
 ```
 
 ---
