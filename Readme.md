@@ -208,3 +208,4 @@ docker-compose up --build
 4. ~~**Local model swap** — Support additional Ollama models (Mistral, Phi-3, etc.) via the `OLLAMA_MODEL` env var.~~
 5. ~~**PDF character sheet export** — Auto-fill a WotC 5e character sheet PDF from a saved `PlayerProfile`.~~
 6. **D&D 5e SRD data ingestion** — Ingest official SRD PDFs so the RAG layer can answer rules questions in-context.
+7. **Remove** all other users from the repos as it is a closed repository for now.
