@@ -90,3 +90,42 @@ class OllamaProvider(AIProvider):
             f"{npc_name}:"
         )
         return self._chat(system, user)
+
+    def generate_stream_with_context(
+        self,
+        query: str,
+        npc_name: str,
+        recent_interactions: list[str],
+    ):
+        campaign_ctx = _get_campaign_context()
+        history_block = "\n".join(recent_interactions)
+        system = (
+            f"You are {npc_name}, an NPC in a tabletop role-playing game. "
+            f"Stay in character at all times and respond naturally.\n"
+            f"{campaign_ctx}"
+        )
+        user = (
+            f"Recent interactions:\n{history_block}\n\n"
+            f"Player: {query}\n"
+            f"{npc_name}:"
+        )
+        
+        url = f"{self.base_url}/api/chat"
+        payload = {
+            "model": self.model,
+            "stream": True,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ],
+        }
+        import json
+        try:
+            with requests.post(url, json=payload, stream=True, timeout=60) as response:
+                response.raise_for_status()
+                for line in response.iter_lines():
+                    if line:
+                        chunk = json.loads(line)
+                        yield chunk["message"]["content"]
+        except requests.exceptions.ConnectionError:
+            yield "Could not connect to Ollama. Is it running?"

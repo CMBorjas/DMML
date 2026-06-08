@@ -34,3 +34,15 @@ class AIProvider(ABC):
             recent_interactions: Last N chat turns as plain strings.
         """
         ...
+
+    @abstractmethod
+    def generate_stream_with_context(
+        self,
+        query: str,
+        npc_name: str,
+        recent_interactions: list[str],
+    ):
+        """
+        Generate a streamed response (yields chunks).
+        """
+        ...

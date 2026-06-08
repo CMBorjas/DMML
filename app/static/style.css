@@ -352,3 +352,137 @@ button { cursor: pointer; font-family: inherit; transition: all 0.18s ease; }
 .pip-d20 { clip-path: polygon(50% 0%, 100% 100%, 0% 100%); }
 .pip-d100{ clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
 .pip-label { color: var(--text-muted); font-size: 0.6rem; margin-top: 1px; }
+
+/* ============================================================
+   CHARACTER SHEET LAYOUT (inside NPC expanded card)
+   ============================================================ */
+
+.cs-sheet { padding: 16px; border-top: 1px solid var(--border); }
+
+/* Identity bar */
+.cs-identity {
+  display: flex; flex-wrap: wrap; gap: 0;
+  border: 1px solid var(--border); border-radius: 4px;
+  overflow: hidden; margin-bottom: 14px;
+}
+.cs-id-field {
+  flex: 1; min-width: 120px;
+  padding: 6px 10px; border-right: 1px solid var(--border);
+  background: #0d0d0d;
+}
+.cs-id-field:last-child { border-right: none; }
+.cs-id-field label {
+  display: block; font-size: 0.65rem; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 2px;
+}
+.cs-id-field span { font-size: 0.82rem; color: var(--text-main); }
+
+/* Three-column layout */
+.cs-columns { display: grid; grid-template-columns: 160px 180px 1fr; gap: 14px; }
+@media (max-width: 700px) { .cs-columns { grid-template-columns: 1fr; } }
+
+.cs-section-label {
+  font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.8px;
+  color: var(--text-muted); margin-bottom: 6px; padding-bottom: 3px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Ability scores */
+.cs-abilities { display: flex; flex-direction: column; gap: 4px; }
+.cs-ability {
+  background: #0d0d0d; border: 1px solid var(--border); border-radius: 4px;
+  display: flex; align-items: center; gap: 6px; padding: 4px 8px;
+}
+.cs-ability-label { font-size: 0.68rem; color: var(--text-muted); width: 28px; flex-shrink: 0; }
+.cs-ability-mod   { font-size: 1rem; font-weight: 700; color: var(--gold); width: 30px; text-align: center; }
+.cs-ability-score { font-size: 0.75rem; color: var(--text-muted); }
+
+/* Combat boxes */
+.cs-combat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.cs-combat-box {
+  background: #0d0d0d; border: 1px solid var(--border);
+  border-radius: 4px; text-align: center; padding: 6px 4px;
+}
+.cs-combat-val { font-size: 1rem; font-weight: 700; color: var(--gold); }
+.cs-combat-lbl { font-size: 0.6rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.4px; }
+
+/* Saving throws */
+.cs-saves { display: flex; flex-direction: column; gap: 2px; }
+.cs-save-row {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; color: var(--text-muted); padding: 1px 0;
+}
+.cs-save-row.proficient { color: var(--text-main); }
+.cs-prof-dot { font-size: 0.55rem; color: var(--border-glow); }
+.cs-prof-dot.filled { color: var(--gold); }
+
+/* Passive perception */
+.cs-passive {
+  margin-top: 8px; font-size: 0.78rem; color: var(--text-muted);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 5px 8px; background: #0d0d0d;
+}
+.cs-passive strong { color: var(--gold); }
+
+/* Skills */
+.cs-skills { display: flex; flex-direction: column; gap: 2px; }
+.cs-skill-row {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.75rem; color: var(--text-muted); padding: 1px 0;
+}
+.cs-skill-row.proficient { color: var(--text-main); }
+.cs-skill-val { min-width: 24px; text-align: right; font-weight: 600; color: var(--gold); }
+
+/* Appearance */
+.cs-appearance { display: flex; flex-direction: column; gap: 3px; }
+.cs-app-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.78rem; padding: 3px 0; border-bottom: 1px solid #1a1408;
+}
+.cs-app-row label { color: var(--text-muted); font-size: 0.7rem; text-transform: uppercase; }
+.cs-app-row span  { color: var(--text-main); }
+
+/* Weapons table */
+.cs-weapons-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.78rem; margin-top: 4px;
+}
+.cs-weapons-table th {
+  text-align: left; color: var(--text-muted); font-size: 0.68rem;
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 3px 6px; border-bottom: 1px solid var(--border);
+}
+.cs-weapons-table td {
+  padding: 4px 6px; border-bottom: 1px solid #1a1408;
+  color: var(--text-main);
+}
+.cs-weapons-table td:nth-child(2) { color: var(--gold); font-weight: 600; }
+
+/* Features text */
+.cs-text { font-size: 0.8rem; line-height: 1.55; color: var(--text-main); margin-top: 4px; }
+
+/* Currency */
+.cs-currency { display: flex; gap: 8px; margin-top: 4px; }
+.cs-coin {
+  padding: 3px 10px; border-radius: 4px; font-size: 0.78rem; font-weight: 600;
+  border: 1px solid var(--border);
+}
+.cs-coin.gp { color: #e8c84b; border-color: #7a6010; background: #1a1200; }
+.cs-coin.sp { color: #b8c0c8; border-color: #506070; background: #0d1218; }
+.cs-coin.cp { color: #c8a880; border-color: #704030; background: #180d0a; }
+
+/* Personality section */
+.cs-personality {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border);
+}
+@media (max-width: 700px) { .cs-personality { grid-template-columns: 1fr 1fr; } }
+.cs-pers-box {
+  background: #0d0d0d; border: 1px solid var(--border);
+  border-radius: 4px; padding: 8px 10px;
+}
+.cs-pers-box label {
+  display: block; font-size: 0.65rem; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px;
+}
+.cs-pers-box p { font-size: 0.78rem; color: var(--text-main); line-height: 1.5; }

@@ -202,9 +202,9 @@ docker-compose up --build
 
 ## Future Goals
 
-1. **Campaign management UI** — Let DMs create and edit campaign logs directly in the browser.
+1. ~~**Campaign management UI** — Let DMs create and edit campaign logs directly in the browser.~~
 2. **Per-NPC vector memory** — Store NPC-specific embeddings so each NPC truly "remembers" past interactions across sessions.
-3. **Streaming responses** — Stream AI dialogue token-by-token for a more immersive feel.
-4. **Local model swap** — Support additional Ollama models (Mistral, Phi-3, etc.) via the `OLLAMA_MODEL` env var.
-5. **PDF character sheet export** — Auto-fill a WotC 5e character sheet PDF from a saved `PlayerProfile`.
+3. ~~**Streaming responses** — Stream AI dialogue token-by-token for a more immersive feel.~~
+4. ~~**Local model swap** — Support additional Ollama models (Mistral, Phi-3, etc.) via the `OLLAMA_MODEL` env var.~~
+5. ~~**PDF character sheet export** — Auto-fill a WotC 5e character sheet PDF from a saved `PlayerProfile`.~~
 6. **D&D 5e SRD data ingestion** — Ingest official SRD PDFs so the RAG layer can answer rules questions in-context.

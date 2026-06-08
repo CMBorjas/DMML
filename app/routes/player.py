@@ -6,7 +6,10 @@ Single schema, single URL prefix — /player and /player_profile legacy
 routes have been removed.
 """
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
+import os
+import io
+import fitz  # PyMuPDF
 
 from app import db
 from app.models.player_profile import PlayerProfile
@@ -126,3 +129,68 @@ def delete_player(player_id: int):
     db.session.delete(player)
     db.session.commit()
     return "", 204
+@player_bp.route("/<int:player_id>/export_pdf", methods=["GET"])
+def export_pdf(player_id: int):
+    """Export a PlayerProfile to a fillable WotC D&D 5e Character Sheet PDF."""
+    player = db.get_or_404(PlayerProfile, player_id)
+    
+    # Path to the empty template
+    template_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        "data", "Example", "Example_Character_sheet.pdf"
+    )
+    if not os.path.exists(template_path):
+        return jsonify({"error": "Template PDF not found."}), 500
+
+    def get_mod(score):
+        return f"+{(score - 10) // 2}" if score >= 10 else str((score - 10) // 2)
+
+    # Map model fields to PDF form fields
+    field_map = {
+        "CharacterName": player.name,
+        "RACE": player.species,
+        "CLASS  LEVEL": player.character_class,
+        "BACKGROUND": player.background or "",
+        "ALIGNMENT": player.alignment or "",
+        "STR": str(player.strength),
+        "DEX": str(player.dexterity),
+        "CON": str(player.constitution),
+        "INT": str(player.intelligence),
+        "WIS": str(player.wisdom),
+        "CHA": str(player.charisma),
+        "STRmod": get_mod(player.strength),
+        "DEXmod ": get_mod(player.dexterity),
+        "CONmod": get_mod(player.constitution),
+        "INTmod": get_mod(player.intelligence),
+        "WISmod": get_mod(player.wisdom),
+        "CHamod": get_mod(player.charisma),
+        "AC": str(player.armor_class),
+        "Init": str(player.initiative),
+        "Speed": str(player.speed),
+        "MaxHP": str(player.hit_points),
+        "CurrentHP": str(player.hit_points),
+        "FeaturesTraits": player.description or "",
+        "Backstory": player.backstory or "",
+        "Equipment": player.equipment or "",
+        "ProficienciesLang": (player.skills or "") + " " + (player.languages or ""),
+    }
+
+    try:
+        doc = fitz.open(template_path)
+        for page in doc:
+            for widget in page.widgets():
+                if widget.field_name in field_map:
+                    widget.field_value = field_map[widget.field_name]
+                    widget.update()
+        
+        pdf_bytes = doc.write()
+        doc.close()
+        
+        return send_file(
+            io.BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"{player.name.replace(' ', '_')}_Character_Sheet.pdf"
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

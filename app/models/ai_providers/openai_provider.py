@@ -91,3 +91,47 @@ class OpenAIProvider(AIProvider):
             f"{npc_name}:"
         )
         return _invoke(prompt)
+
+    def generate_stream_with_context(
+        self,
+        query: str,
+        npc_name: str,
+        recent_interactions: list[str],
+    ):
+        history_block = "\n".join(recent_interactions)
+        prompt = (
+            f"You are {npc_name}, an NPC in a tabletop role-playing game. "
+            f"Stay in character and respond naturally.\n\n"
+            f"Recent interactions:\n{history_block}\n\n"
+            f"Player: {query}\n"
+            f"{npc_name}:"
+        )
+        
+        # Retrieve context manually to use with the standard streaming API
+        chain = _get_chain()
+        docs = chain.retriever.invoke(prompt)
+        context = "\n".join(d.page_content for d in docs)
+        
+        system = f"Campaign context:\n{context}"
+        
+        import openai
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            yield "OPENAI_API_KEY is not set."
+            return
+            
+        client = openai.OpenAI(api_key=api_key)
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt}
+                ],
+                stream=True
+            )
+            for chunk in response:
+                if chunk.choices[0].delta.content is not None:
+                    yield chunk.choices[0].delta.content
+        except Exception as e:
+            yield f"Error from OpenAI: {str(e)}"

@@ -155,6 +155,50 @@ def chat_with_npc(npc_id: int):
     })
 
 
+@npc_bp.route("/<int:npc_id>/chat_stream", methods=["POST"])
+def chat_with_npc_stream(npc_id: int):
+    """
+    Stream AI response token-by-token.
+    """
+    data, err = _validate_json("input")
+    if err:
+        return err
+
+    player_input = data["input"].strip()
+    if not player_input:
+        return jsonify({"error": "Input must not be empty"}), 400
+
+    npc = db.get_or_404(NPC, npc_id)
+
+    recent = npc.messages.order_by(ChatMessage.created_at.desc()).limit(10).all()
+    recent.reverse()
+    recent_text = [
+        f"{'Player' if m.sender == 'P' else npc.name}: {m.content}"
+        for m in recent
+    ]
+
+    # Persist player turn immediately
+    db.session.add(ChatMessage(npc_id=npc.id, sender="P", content=player_input))
+    db.session.commit()
+
+    from flask import Response, stream_with_context, current_app
+    from app.models.ai import generate_stream_with_context
+
+    def generate():
+        app = current_app._get_current_object()
+        with app.app_context():
+            full_response = ""
+            for chunk in generate_stream_with_context(player_input, npc.name, recent_text):
+                full_response += chunk
+                yield chunk
+            
+            # Persist AI response
+            db.session.add(ChatMessage(npc_id=npc.id, sender="N", content=full_response))
+            db.session.commit()
+
+    return Response(stream_with_context(generate()), mimetype='text/plain')
+
+
 @npc_bp.route("/<int:npc_id>/chat", methods=["GET"])
 def get_chat_history(npc_id: int):
     """Return the full chat history for a given NPC."""

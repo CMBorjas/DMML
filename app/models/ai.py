@@ -36,6 +36,17 @@ def generate_suggestion_with_context(
     return get_provider().generate_with_context(query, npc_name, recent_interactions)
 
 
+def generate_stream_with_context(
+    query: str,
+    npc_name: str,
+    recent_interactions: list[str],
+):
+    """
+    Generate an in-character NPC response using recent chat history, streaming chunks.
+    """
+    return get_provider().generate_stream_with_context(query, npc_name, recent_interactions)
+
+
 def generate_quest(npc_name: str, location: str) -> str:
     """Generate an AI-written quest request from a named NPC at a location."""
     prompt = (

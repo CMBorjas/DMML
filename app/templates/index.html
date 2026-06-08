@@ -72,6 +72,37 @@
     </form>
   </div>
 
+  <!-- ── Campaign Logs ──────────────────────────────────────────────── -->
+  <h2>Campaign Logs</h2>
+  <button class="btn-primary" id="createLogButton">+ New Log Entry</button>
+
+  <div id="logFormContainer" class="form-container" style="display:none; margin-top:12px;">
+    <h3 style="font-family:'Cinzel',serif; color:var(--text-heading); margin-bottom:16px;">Log Entry</h3>
+    <form id="logForm">
+      <input type="hidden" id="logId" name="id">
+      <div class="form-row">
+        <label for="logNarrative">Narrative Summary</label>
+        <textarea id="logNarrative" name="narrative" required placeholder="What happened?" style="width:100%; background:#080808; border:1px solid var(--border); color:var(--text-main); padding:8px 10px; border-radius:4px; font-family:inherit; font-size:0.88rem; min-height:80px;"></textarea>
+      </div>
+      <div class="form-row">
+        <label for="logEncounters">Encounters</label>
+        <input type="text" id="logEncounters" name="encounters" placeholder="Combat encounters, traps, etc.">
+      </div>
+      <div class="form-row">
+        <label for="logNpcDetails">NPCs / Lore</label>
+        <input type="text" id="logNpcDetails" name="npc_details" placeholder="Important NPCs or lore revealed">
+      </div>
+      <div style="margin-top:16px; display:flex; gap:8px;">
+        <button type="button" class="btn-primary" id="saveLogButton">Save Log</button>
+        <button type="button" class="btn-action" id="cancelLogButton">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="campaignLogsList" style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+    <p style="color:var(--text-muted); font-size:0.85rem;">Loading campaign logs…</p>
+  </div>
+
   <!-- ── Generate NPCs ──────────────────────────────────────────────── -->
   <h2>Generate NPCs</h2>
   <button class="btn-primary" id="generateNpcButton">⚄ Generate Random NPC</button>
@@ -142,6 +173,94 @@ document.getElementById('cancelCharacterButton').addEventListener('click', () =>
 document.getElementById('saveCharacterButton').addEventListener('click', submitCharacterForm);
 document.getElementById('generateNpcButton').addEventListener('click', generateNpc);
 
+// ============================================================
+// CAMPAIGN LOGS
+// ============================================================
+document.getElementById('createLogButton').addEventListener('click', () => {
+  const form = document.getElementById('logForm');
+  form.reset();
+  document.getElementById('logId').value = '';
+  document.getElementById('logFormContainer').style.display = 'block';
+});
+document.getElementById('cancelLogButton').addEventListener('click', () => {
+  document.getElementById('logFormContainer').style.display = 'none';
+});
+document.getElementById('saveLogButton').addEventListener('click', submitLogForm);
+
+async function fetchLogs() {
+  try {
+    const res = await fetch('/campaigns');
+    if (!res.ok) return;
+    const logs = await res.json();
+    const list = document.getElementById('campaignLogsList');
+    list.innerHTML = '';
+    if (!logs.length) {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">No logs yet — create one above.</p>';
+      return;
+    }
+    logs.forEach(log => {
+      const card = document.createElement('div');
+      card.className = 'npc-card';
+      card.style.padding = '12px 16px';
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <p style="font-size:0.9rem; line-height:1.5;">${log.narrative}</p>
+            ${log.encounters ? `<p style="font-size:0.8rem; color:var(--text-muted); margin-top:6px;"><strong>Encounters:</strong> ${log.encounters}</p>` : ''}
+            ${log.npc_details ? `<p style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;"><strong>NPCs/Lore:</strong> ${log.npc_details}</p>` : ''}
+          </div>
+          <div style="display:flex; gap:6px; flex-shrink:0;">
+            <button class="btn-action" onclick="editLog(${log.id}, \`${escStr(log.narrative)}\`, \`${escStr(log.encounters)}\`, \`${escStr(log.npc_details)}\`)">Edit</button>
+            <button class="btn-danger" onclick="deleteLog(${log.id})">Delete</button>
+          </div>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+  } catch(e) { console.error('fetchLogs:', e); }
+}
+
+function editLog(id, narrative, encounters, npc_details) {
+  const form = document.getElementById('logForm');
+  form.id.value = id;
+  form.narrative.value = narrative;
+  form.encounters.value = encounters !== 'undefined' ? encounters : '';
+  form.npc_details.value = npc_details !== 'undefined' ? npc_details : '';
+  document.getElementById('logFormContainer').style.display = 'block';
+}
+
+async function submitLogForm() {
+  const form = document.getElementById('logForm');
+  const id = form.id.value;
+  const payload = {
+    narrative: form.narrative.value.trim(),
+    encounters: form.encounters.value.trim(),
+    npc_details: form.npc_details.value.trim()
+  };
+  if (!payload.narrative) return alert('Narrative is required');
+
+  const url = id ? \`/campaigns/\${id}\` : '/campaigns';
+  const method = id ? 'PUT' : 'POST';
+
+  const res = await fetch(url, {
+    method, headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if (res.ok) {
+    document.getElementById('logFormContainer').style.display = 'none';
+    fetchLogs();
+  } else {
+    const err = await res.json();
+    alert(\`Failed: \${err.error || 'Check the form and try again.'}\`);
+  }
+}
+
+async function deleteLog(id) {
+  if (!confirm('Delete this campaign log?')) return;
+  const res = await fetch(\`/campaigns/\${id}\`, { method:'DELETE' });
+  if (res.ok || res.status === 204) fetchLogs();
+}
+
 async function fetchNpcs() {
   try {
     const res = await fetch('/npc');
@@ -154,11 +273,67 @@ async function fetchNpcs() {
       return;
     }
     npcs.forEach(npc => {
-      const stats = npc.stats || {};
-      const statPills = Object.entries(stats).map(([k,v]) =>
-        `<span class="stat-pill">${k}: ${v}</span>`).join('');
+      const s = npc.sheet || {};
 
-      const details = document.createElement('details');
+      // Helper: format modifier with sign
+      const fmt = v => (v === undefined || v === null) ? '—' : (typeof v === 'number' ? (v >= 0 ? `+${v}` : `${v}`) : v);
+
+      // Ability scores block
+      const abilityBlock = ['STR','DEX','CON','INT','WIS','CHA'].map(a => `
+        <div class="cs-ability">
+          <div class="cs-ability-label">${a}</div>
+          <div class="cs-ability-mod">${s[a+'mod'] || fmt(s[a] ? Math.floor((s[a]-10)/2) : 0)}</div>
+          <div class="cs-ability-score">${s[a] || '—'}</div>
+        </div>`).join('');
+
+      // Saving throws block
+      const saves = ['STR','DEX','CON','INT','WIS','CHA'];
+      const saveLabels = {STR:'Strength',DEX:'Dexterity',CON:'Constitution',INT:'Intelligence',WIS:'Wisdom',CHA:'Charisma'};
+      const saveProfs = s.saving_throw_profs || [];
+      const savesBlock = saves.map(a => {
+        const prof = saveProfs.includes(a);
+        const val  = s[`ST ${saveLabels[a]}`] || '—';
+        return `<div class="cs-save-row ${prof ? 'proficient' : ''}">
+          <span class="cs-prof-dot ${prof ? 'filled' : ''}">●</span>
+          <span>${val} ${saveLabels[a]}</span></div>`;
+      }).join('');
+
+      // Skills block
+      const ALL_SKILLS = {
+        'Acrobatics':'DEX','Animal Handling':'WIS','Arcana':'INT','Athletics':'STR',
+        'Deception':'CHA','History':'INT','Insight':'WIS','Intimidation':'CHA',
+        'Investigation':'INT','Medicine':'WIS','Nature':'INT','Perception':'WIS',
+        'Performance':'CHA','Persuasion':'CHA','Religion':'INT',
+        'Sleight of Hand':'DEX','Stealth':'DEX','Survival':'WIS'
+      };
+      const profSkills = s.proficient_skills || [];
+      const skillsData = s.skills || {};
+      const skillsBlock = Object.entries(ALL_SKILLS).map(([skill, attr]) => {
+        const prof = profSkills.includes(skill);
+        const val  = skillsData[skill] ? skillsData[skill].value : '—';
+        return `<div class="cs-skill-row ${prof ? 'proficient' : ''}">
+          <span class="cs-prof-dot ${prof ? 'filled' : ''}">●</span>
+          <span class="cs-skill-val">${val}</span>
+          <span>${skill} <em style="color:var(--text-muted);font-size:0.7rem">(${attr})</em></span>
+        </div>`;
+      }).join('');
+
+      // Weapons block
+      const weapons = s.weapons || [];
+      const weaponsBlock = weapons.length
+        ? `<table class="cs-weapons-table">
+            <thead><tr><th>Weapon</th><th>Atk Bonus</th><th>Damage/Type</th></tr></thead>
+            <tbody>${weapons.map(w => `<tr><td>${w.name}</td><td>${w.atk_bonus}</td><td>${w.damage}</td></tr>`).join('')}</tbody>
+           </table>`
+        : '<p style="color:var(--text-muted);font-size:0.82rem;">No weapons listed.</p>';
+
+      // Spells block
+      const spells = s.spells || [];
+      const spellsBlock = spells.length
+        ? spells.map(sp => `<span class="stat-pill">${sp}</span>`).join('')
+        : '<span style="color:var(--text-muted);font-size:0.82rem;">None</span>';
+
+      details = document.createElement('details');
       details.className = 'npc-card';
       details.id = `npc-${npc.id}`;
       details.innerHTML = `
@@ -168,22 +343,111 @@ async function fetchNpcs() {
           <span class="npc-badge badge-role">${npc.role}</span>
           <span class="npc-badge badge-align">${npc.alignment || '—'}</span>
         </summary>
-        <div class="npc-body">
-          <div class="npc-info">
-            <p><strong>Abilities</strong><br>${npc.abilities || '—'}</p>
-            <p style="margin-top:8px;"><strong>Spells</strong><br>${npc.spells || 'None'}</p>
-            <p style="margin-top:8px;"><strong>Racial Features</strong><br>${npc.racial_features || '—'}</p>
-            <p style="margin-top:8px;"><strong>Description</strong><br>${npc.description || '—'}</p>
+
+        <div class="cs-sheet">
+
+          <!-- ── Identity Bar ── -->
+          <div class="cs-identity">
+            <div class="cs-id-field"><label>Race</label><span>${s.RACE || '—'}</span></div>
+            <div class="cs-id-field"><label>Class & Level</label><span>${s.CLASS_LEVEL || npc.role}</span></div>
+            <div class="cs-id-field"><label>Background</label><span>${s.BACKGROUND || '—'}</span></div>
+            <div class="cs-id-field"><label>Alignment</label><span>${s.ALIGNMENT || npc.alignment}</span></div>
+            <div class="cs-id-field"><label>Gender / Age</label><span>${s.GENDER || '—'} · ${s.AGE || '—'}</span></div>
+            <div class="cs-id-field"><label>Size / Speed</label><span>${s.SIZE || '—'} · ${s.Speed || '—'} ft</span></div>
           </div>
-          <div class="npc-info">
-            <p><strong>Ability Scores</strong></p>
-            <div class="stat-pills">${statPills || '<span style="color:var(--text-muted)">—</span>'}</div>
+
+          <div class="cs-columns">
+
+            <!-- ── Left Column ── -->
+            <div class="cs-left">
+
+              <!-- Ability Scores -->
+              <div class="cs-section-label">Ability Scores</div>
+              <div class="cs-abilities">${abilityBlock}</div>
+
+              <!-- Combat Row -->
+              <div class="cs-section-label" style="margin-top:12px;">Combat</div>
+              <div class="cs-combat-row">
+                <div class="cs-combat-box"><div class="cs-combat-val">${s.AC || '—'}</div><div class="cs-combat-lbl">AC</div></div>
+                <div class="cs-combat-box"><div class="cs-combat-val">${s.Init || '—'}</div><div class="cs-combat-lbl">Initiative</div></div>
+                <div class="cs-combat-box"><div class="cs-combat-val">${s.Speed || '—'}</div><div class="cs-combat-lbl">Speed</div></div>
+                <div class="cs-combat-box"><div class="cs-combat-val">${s.MaxHP || '—'}</div><div class="cs-combat-lbl">Max HP</div></div>
+                <div class="cs-combat-box"><div class="cs-combat-val">${s.HD || '—'}</div><div class="cs-combat-lbl">Hit Die</div></div>
+                <div class="cs-combat-box"><div class="cs-combat-val">${s.ProfBonus || '—'}</div><div class="cs-combat-lbl">Prof Bonus</div></div>
+              </div>
+
+              <!-- Saving Throws -->
+              <div class="cs-section-label" style="margin-top:12px;">Saving Throws</div>
+              <div class="cs-saves">${savesBlock}</div>
+
+              <!-- Passive Perception -->
+              <div class="cs-passive">Passive Perception: <strong>${s.Passive || '—'}</strong></div>
+
+            </div>
+
+            <!-- ── Middle Column (Skills) ── -->
+            <div class="cs-middle">
+              <div class="cs-section-label">Skills</div>
+              <div class="cs-skills">${skillsBlock}</div>
+            </div>
+
+            <!-- ── Right Column ── -->
+            <div class="cs-right">
+
+              <!-- Appearance -->
+              <div class="cs-section-label">Appearance</div>
+              <div class="cs-appearance">
+                <div class="cs-app-row"><label>Eyes</label><span>${s.EYES || '—'}</span></div>
+                <div class="cs-app-row"><label>Hair</label><span>${s.HAIR || '—'}</span></div>
+                <div class="cs-app-row"><label>Skin</label><span>${s.SKIN || '—'}</span></div>
+                <div class="cs-app-row"><label>Height</label><span>${s.HEIGHT || '—'}</span></div>
+                <div class="cs-app-row"><label>Weight</label><span>${s.WEIGHT || '—'}</span></div>
+              </div>
+
+              <!-- Weapons -->
+              <div class="cs-section-label" style="margin-top:12px;">Weapons &amp; Attacks</div>
+              ${weaponsBlock}
+
+              <!-- Spells -->
+              <div class="cs-section-label" style="margin-top:12px;">Spells
+                ${s.spellCastingAbility ? `<em style="color:var(--text-muted);font-size:0.7rem;font-family:inherit">(${s.spellCastingAbility})</em>` : ''}
+              </div>
+              <div class="stat-pills" style="margin-top:4px;">${spellsBlock}</div>
+
+              <!-- Features & Traits -->
+              <div class="cs-section-label" style="margin-top:12px;">Class Features</div>
+              <p class="cs-text">${s.class_features || '—'}</p>
+
+              <div class="cs-section-label" style="margin-top:8px;">Racial Features</div>
+              <p class="cs-text">${s.racial_features || npc.racial_features || '—'}</p>
+
+              <!-- Currency -->
+              <div class="cs-section-label" style="margin-top:12px;">Starting Gold</div>
+              <div class="cs-currency">
+                <span class="cs-coin gp">GP: ${s.GP ?? '—'}</span>
+                <span class="cs-coin sp">SP: ${s.SP ?? '—'}</span>
+                <span class="cs-coin cp">CP: ${s.CP ?? '—'}</span>
+              </div>
+
+            </div>
           </div>
+
+          <!-- ── Personality ── -->
+          <div class="cs-personality">
+            <div class="cs-pers-box"><label>Personality Traits</label><p>${s.PersonalityTraits || '—'}</p></div>
+            <div class="cs-pers-box"><label>Ideals</label><p>${s.Ideals || '—'}</p></div>
+            <div class="cs-pers-box"><label>Bonds</label><p>${s.Bonds || '—'}</p></div>
+            <div class="cs-pers-box"><label>Flaws</label><p>${s.Flaws || '—'}</p></div>
+          </div>
+
+          <!-- ── Actions ── -->
           <div class="npc-actions">
             <button class="btn-action" onclick="generateQuest(${npc.id},'${escStr(npc.name)}')">⚔ Quest</button>
             <button class="btn-action" onclick="generateLoot(${npc.id})">💰 Loot</button>
             <button class="btn-danger" onclick="deleteNpc(${npc.id})">🗑 Delete</button>
           </div>
+
+          <!-- ── Chat ── -->
           <div class="chat-section">
             <h4>Chat with ${npc.name}</h4>
             <div class="chat-history" id="chatHistory-${npc.id}"></div>
@@ -192,7 +456,8 @@ async function fetchNpcs() {
               <button class="btn-action" onclick="chatWithNpc(${npc.id},'${escStr(npc.name)}')">Send</button>
             </div>
           </div>
-        </div>
+
+        </div><!-- /.cs-sheet -->
       `;
       list.appendChild(details);
       loadChatHistory(npc.id);
@@ -452,6 +717,7 @@ document.getElementById('dpClear').addEventListener('click', () => {
 buildDiceGrid();
 updateDiceUI(loadDiceState());
 fetchNpcs();
+fetchLogs();
 </script>
 </body>
 </html>
