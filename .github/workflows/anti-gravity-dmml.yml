@@ -8,9 +8,12 @@ on:
 jobs:
   compile-to-serverless-wasm:
     runs-on: ubuntu-latest
+    env:
+      # Fixes deprecation warning: Forces actions using native JS hooks onto Node 24 runners
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: 1. Checkout DMML Codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # Safe, modern versioning block
 
       - name: 2. Validate Sandbox Metadata Manifest
         id: parse-manifest
@@ -29,7 +32,7 @@ jobs:
           echo "Validated sandbox.json successfully. Found engine: $ENGINE_TYPE"
 
       - name: 3. Initialize Python Environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5 # Clear Node compliance configuration
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -124,4 +127,4 @@ jobs:
           target-branch: 'main'
           user-email: 'anti-gravity-engine@github.com'
           user-name: 'Anti-Gravity Sync Bot'
-          commit-message: 'chore(sandbox): auto-deploy compiled DMML serverless layer'
+          commit-message: 'chore(sandbox): auto-deploy compiled DMML serverless layer with node24 runtime update'
