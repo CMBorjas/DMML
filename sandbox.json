@@ -3,7 +3,7 @@
     "project_id": "dmml-framework",
     "project_name": "Data Mining & Machine Learning DM Framework",
     "runtime_class": "wasm-interpreter",
-    "engine_type": "marimo",
+    "engine_type": "pyodide-terminal",
     "source_entry": "./run.py",
     "build_requirements": "./requirements.txt",
     "environment_constraints": {
