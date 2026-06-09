@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Allows you to manually trigger a build from the GitHub UI
+  workflow_dispatch:
 
 jobs:
   compile-to-serverless-wasm:
@@ -19,17 +19,14 @@ jobs:
             echo "ERROR: sandbox.json manifest not found at root directory!" && exit 1
           fi
           
-          # Extract entry parameters programmatically using jq
           RUNTIME_CLASS=$(jq -r '.runtime_class' sandbox.json)
           ENGINE_TYPE=$(jq -r '.engine_type' sandbox.json)
           SOURCE_ENTRY=$(jq -r '.source_entry' sandbox.json)
           
-          if [ "$RUNTIME_CLASS" != "wasm-interpreter" ] || [ "$ENGINE_TYPE" != "marimo" ]; then
-            echo "ERROR: Mismatched runtime engine. Expected marimo / wasm-interpreter." && exit 1
-          fi
-          
           echo "ENTRY_POINT=$SOURCE_ENTRY" >> $GITHUB_ENV
-          echo "Validated sandbox.json successfully."
+          echo "ENGINE_FORMAT=$ENGINE_TYPE" >> $GITHUB_ENV
+          echo "RUNTIME_TARGET=$RUNTIME_CLASS" >> $GITHUB_ENV
+          echo "Validated sandbox.json successfully. Found engine: $ENGINE_TYPE"
 
       - name: 3. Initialize Python Environment
         uses: actions/setup-python@v5
@@ -40,15 +37,27 @@ jobs:
       - name: 4. Install Toolchain Components & Project Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install marimo
+          if [ "${{ env.ENGINE_FORMAT }}" = "marimo" ]; then
+            pip install marimo
+          fi
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
 
-      - name: 5. Execute WebAssembly App Compilation
+      # --- PIPELINE SELECTION A: MARIMO EXPORT RULE ---
+      - name: 5a. Execute Marimo Application Compilation
+        if: env.ENGINE_FORMAT == 'marimo'
         run: |
           mkdir -p build-output
-          # Build a light serverless HTML payload that fetches Pyodide and runs your raw run.py code client-side
+          marimo export html-wasm ${{ env.ENTRY_POINT }} --output build-output/index.html
+
+      # --- PIPELINE SELECTION B: PURE PYODIDE TERMINAL PACKAGING ---
+      - name: 5b. Execute Pyodide Terminal Virtualization Packaging
+        if: env.ENGINE_FORMAT == 'pyodide-terminal'
+        run: |
+          mkdir -p build-output
+          cp ${{ env.ENTRY_POINT }} build-output/run.py
+          
           cat << 'EOF' > build-output/index.html
           <!DOCTYPE html>
           <html>
@@ -58,58 +67,61 @@ jobs:
               <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
               <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
               <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+              <style>
+                  body { margin:0; background:#0c0c0c; color:#00ff00; font-family:monospace; padding:15px; }
+                  .xterm-viewport { overflow-y: auto; }
+              </style>
           </head>
-          <body style="margin:0; background:#0c0c0c; color:#fff; font-family:monospace; padding:15px;">
-              <div id="terminal" style="width:100%; height:90vh;"></div>
+          <body>
+              <div id="terminal" style="width:100%; height:95vh;"></div>
               <script type="module">
-                  const term = new Terminal();
+                  const term = new Terminal({ cursorBlink: true, theme: { background: '#0c0c0c', foreground: '#00ff00' } });
                   term.open(document.getElementById('terminal'));
-                  term.write('Initializing Serverless Python Engine (Pyodide)...\r\n');
+                  term.write('\x1b[1;32m[Anti-Gravity Engine]\x1b[0m Initializing Serverless Python Sandbox Environment...\r\n');
                   
-                  async function initPyodide() {
-                      let pyodide = await loadPyodide();
-                      term.write('Python Engine Loaded. Syncing script layers...\r\n');
-                      
-                      // Fetch your raw file into Pyodide's virtual filesystem
-                      let response = await fetch('./run.py');
-                      let code = await response.text();
-                      pyodide.FS.writeFile('run.py', code);
-                      
-                      term.write('Running Engine Logic:\r\n\r\n');
+                  async function runMain() {
                       try {
+                          let pyodide = await loadPyodide();
+                          term.write('\x1b[1;32m[System]\x1b[0m Python runtime core initialized natively in browser storage.\r\n');
+                          
+                          let response = await fetch('./run.py');
+                          let code = await response.text();
+                          pyodide.FS.writeFile('run.py', code);
+                          
+                          term.write('\x1b[1;34m[Runtime]\x1b[0m Launching script instance process loop:\r\n\r\n');
+                          
                           let output = await pyodide.runPythonAsync(`
                               import sys
                               from io import StringIO
                               sys.stdout = StringIO()
-                              exec(open("run.py").read())
-                              sys.stdout.getvalue()
+                              sys.stderr = StringIO()
+                              try:
+                                  exec(open("run.py").read())
+                              except Exception as e:
+                                  print(f"Runtime Exception: {e}", file=sys.stderr)
+                              sys.stdout.getvalue() + sys.stderr.getvalue()
                           `);
                           term.write(output.replace(/\n/g, '\r\n'));
                       } catch (err) {
-                          term.write('\r\nError executing script: ' + err);
+                          term.write('\r\n\x1b[1;31m[Fatal Intercept]:\x1b[0m ' + err + '\r\n');
                       }
                   }
-                  initPyodide();
+                  runMain();
               </script>
           </body>
           </html>
           EOF
-          
-          # Copy your raw run.py along with the html file so the client browser can fetch it
-          cp run.py build-output/run.py
 
       - name: 6. Securely Dispatch and Sync with Main Portfolio Repo
         uses: cpina/github-action-push-to-another-repository@main
         env:
-          # You will need to add a GitHub Personal Access Token (PAT) named ANTIGRAVITY_SYNC_TOKEN 
-          # to your DMML repo secrets so it has write access to your main portfolio repo
           API_TOKEN_GITHUB: ${{ secrets.ANTIGRAVITY_SYNC_TOKEN }}
         with:
           source-directory: 'build-output'
           destination-github-username: 'CMBorjas'
-          destination-repository-name: 'resume' # Change this if your portfolio website repo has a different name
+          destination-repository-name: 'resume'
           target-directory: 'sandboxes/dmml-framework'
           target-branch: 'main'
           user-email: 'anti-gravity-engine@github.com'
           user-name: 'Anti-Gravity Sync Bot'
-          commit-message: 'chore(sandbox): auto-deploy compiled DMML serverless WASM layer'
+          commit-message: 'chore(sandbox): auto-deploy compiled DMML serverless layer'
