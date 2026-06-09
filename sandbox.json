@@ -1,5 +1,5 @@
 {
-    "$schema": "https://cmborjas.github.io/resume/schemas/sandbox.v1.json",
+    "$schema": "https://cmborjas.github.io/ResumeWebsite/schemas/sandbox.v1.json",
     "project_id": "dmml-framework",
     "project_name": "Data Mining & Machine Learning DM Framework",
     "runtime_class": "wasm-interpreter",
