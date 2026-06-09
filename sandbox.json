@@ -1,0 +1,32 @@
+{
+    "$schema": "https://cmborjas.github.io/resume/schemas/sandbox.v1.json",
+    "project_id": "dmml-framework",
+    "project_name": "Data Mining & Machine Learning DM Framework",
+    "runtime_class": "wasm-interpreter",
+    "engine_type": "marimo",
+    "source_entry": "./src/app_interface.py",
+    "build_requirements": "./requirements.txt",
+    "environment_constraints": {
+        "python_version": "3.11",
+        "wasm_mem_alloc_mb": 512,
+        "network_access": "none"
+    },
+    "ui_layer": {
+        "embed_type": "reactive-app",
+        "viewport_height": "650px",
+        "theme": "dark",
+        "custom_css_overrides": "./assets/wasm_styles.css"
+    },
+    "community_standards": {
+        "open_source_license": "MIT",
+        "standard_conformance": [
+            "PEP-8",
+            "WASM-Client-Side-Compliant",
+            "Serverless-Isolated"
+        ],
+        "ai_indexing": {
+            "llms_spec_version": "1.0.0",
+            "auto_discoverable": true
+        }
+    }
+}

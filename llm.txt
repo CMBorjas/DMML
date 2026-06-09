@@ -1,0 +1,13 @@
+# Programmatic Repository Matrix Mapping
+> Automatically maintained by the Anti-gravity Engine to align with open-source serverless execution schemas.
+
+## WebAssembly / Interactive Sandbox Context
+- [Static Sandbox Runtime Instance](https://CMBorjas.github.io/resume/sandboxes/{{ REPO_NAME }}/index.html): Client-side isolated runtime container used by the resume workshop platform.
+- [Sandbox Blueprint Architecture](./sandbox.json): Engine processing configurations defining the baseline runtime class, compilation requirements, and UI bindings.
+
+## Codebase Realization & Mappings
+- [Production Source Code](https://github.com/CMBorjas/{{ REPO_NAME }}): Direct repository index for structural code exploration.
+- [Primary Core Module Gateway]({{ ENTRY_POINT }}): Programmatic target containing the primary application logic loops.
+
+## Environmental Controls
+- [Manifest Index]({{ MANIFEST_FILE }}): absolute package and environment pinning specifications defining toolchain requirements.

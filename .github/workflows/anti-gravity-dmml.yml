@@ -1,0 +1,68 @@
+name: Anti-Gravity DMML Sandbox Engine
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows you to manually trigger a build from the GitHub UI
+
+jobs:
+  compile-to-serverless-wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Checkout DMML Codebase
+        uses: actions/checkout@v4
+
+      - name: 2. Validate Sandbox Metadata Manifest
+        id: parse-manifest
+        run: |
+          if [ ! -f sandbox.json ]; then
+            echo "ERROR: sandbox.json manifest not found at root directory!" && exit 1
+          fi
+          
+          # Extract entry parameters programmatically using jq
+          RUNTIME_CLASS=$(jq -r '.runtime_class' sandbox.json)
+          ENGINE_TYPE=$(jq -r '.engine_type' sandbox.json)
+          SOURCE_ENTRY=$(jq -r '.source_entry' sandbox.json)
+          
+          if [ "$RUNTIME_CLASS" != "wasm-interpreter" ] || [ "$ENGINE_TYPE" != "marimo" ]; then
+            echo "ERROR: Mismatched runtime engine. Expected marimo / wasm-interpreter." && exit 1
+          fi
+          
+          echo "ENTRY_POINT=$SOURCE_ENTRY" >> $GITHUB_ENV
+          echo "Validated sandbox.json successfully."
+
+      - name: 3. Initialize Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 4. Install Toolchain Components & Project Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install marimo
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: 5. Execute WebAssembly App Compilation
+        run: |
+          mkdir -p build-output
+          # Transform the reactive python app into a completely self-contained serverless WASM app
+          marimo export html-wasm ${{ env.ENTRY_POINT }} --output build-output/index.html
+
+      - name: 6. Securely Dispatch and Sync with Main Portfolio Repo
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          # You will need to add a GitHub Personal Access Token (PAT) named ANTIGRAVITY_SYNC_TOKEN 
+          # to your DMML repo secrets so it has write access to your main portfolio repo
+          API_TOKEN_GITHUB: ${{ secrets.ANTIGRAVITY_SYNC_TOKEN }}
+        with:
+          source-directory: 'build-output'
+          destination-github-username: 'CMBorjas'
+          destination-repository-name: 'resume' # Change this if your portfolio website repo has a different name
+          target-directory: 'sandboxes/dmml-framework'
+          target-branch: 'main'
+          user-email: 'anti-gravity-engine@github.com'
+          user-name: 'Anti-Gravity Sync Bot'
+          commit-message: 'chore(sandbox): auto-deploy compiled DMML serverless WASM layer'
