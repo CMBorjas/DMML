@@ -4,7 +4,7 @@
     "project_name": "Data Mining & Machine Learning DM Framework",
     "runtime_class": "wasm-interpreter",
     "engine_type": "marimo",
-    "source_entry": "./src/app_interface.py",
+    "source_entry": "./run.py",
     "build_requirements": "./requirements.txt",
     "environment_constraints": {
         "python_version": "3.11",
